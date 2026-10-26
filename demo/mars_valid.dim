@@ -1,0 +1,3 @@
+let thrust = 450 * kg * meters / (seconds ^ 2);
+let time_burn = 10 * seconds;
+let impulse = thrust * time_burn;

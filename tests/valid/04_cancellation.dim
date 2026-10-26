@@ -1,0 +1,3 @@
+let a = 10 * meters;
+let b = 2 * meters;
+let ratio = a / b;

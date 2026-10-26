@@ -1,0 +1,4 @@
+let distance = 5 * meters;
+let time = 10 * seconds;
+let speed = distance / time;
+let force = 2 * kg * meters / (seconds ^ 2);

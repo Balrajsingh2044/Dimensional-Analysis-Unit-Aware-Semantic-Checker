@@ -1,0 +1,2 @@
+let d = 5 * meters;
+let twice = 2 * d;

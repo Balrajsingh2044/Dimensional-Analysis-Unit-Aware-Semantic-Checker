@@ -1,0 +1,7 @@
+# Mars Climate Orbiter inspired demo
+# Metric vs non-metric confusion caused unit mismatch
+let thrust_metric = 450 * newtons;
+let thrust_pounds  = 100 * pounds_force;
+
+# This should be caught as a dimensional/unit consistency error
+let combined_thrust = thrust_metric + thrust_pounds;
