@@ -4,6 +4,12 @@ output/
 *.obj
 *.exe
 a.out
+*.out
+dimc
+dimc-checker
+vec_test
+symtab_test
+semantic_test
 
 # flex/bison generated
 lexer.yy.c
@@ -17,3 +23,4 @@ parser.tab.h
 
 # MS Office lock files
 ~$*
+~$*.pptx

@@ -1,5 +1,22 @@
 # Design decisions — semantic analyzer (Ayansh, Phase 3)
 
+## Final engineering trade-offs (professor-facing summary)
+
+**The Bison 2.4.1 Destructor Trade-off:** We intentionally omitted
+`%destructor` rules to prevent use-after-free crashes caused by Bison 2.4.1
+aggressively consuming values in actions. This results in a bounded
+343-byte leak exclusively on fatal parse-error paths. We accept this minor
+residue on error paths to guarantee stability on valid programs.
+
+**The x87 Floating-Point Tolerance:** On 32-bit MinGW, x87 80-bit internal
+registers caused bit-exact comparisons to fail for scale factors like
+0.3048. We implemented a relative-tolerance check in `scale_equal()` to
+ensure cross-platform correctness.
+
+**The Metric/Imperial Scale Extension:** Extended the core 7-D `UnitVec`
+with a `double scale` field to catch dimensionally correct but
+unit-mismatched errors (e.g., `meters + feet`) at compile time.
+
 ## Integration Point #2 notes (what changed and who to talk to)
 
 1. **`collect_decls()` retired in `frontend_main.c` (was Balraj's).**
