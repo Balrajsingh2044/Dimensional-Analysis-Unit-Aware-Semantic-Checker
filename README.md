@@ -14,7 +14,7 @@ output is unit-stripped plain C — **zero runtime overhead**.
 
 ## Team
 
-| Member  | Owns |
+| Member  | Owns  |
 |---------|------|
 | Balraj  | Lexer (Flex), Parser (Bison), `ast.c`, Symbol Table, tooling |
 | Ayansh  | Semantic analyzer: 7-D unit vector engine, AST folding, diagnostics |
