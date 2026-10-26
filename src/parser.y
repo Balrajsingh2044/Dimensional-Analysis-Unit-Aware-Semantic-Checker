@@ -45,6 +45,12 @@ void yyerror(const char *msg);
 
 %type <node> program stmt_list stmt expr term factor
 
+/* Exactly 2 shift/reduce conflicts are CORRECT and REQUIRED by the unary
+ * minus rules: after '- factor' / '+ factor', a following '^' must SHIFT so
+ * the power binds the inner factor (-x^2 == -(x^2), C-style). If you add
+ * rules and see these counts change, STOP and check parser.output. */
+%expect 2
+
 %start program
 
 %%
@@ -76,13 +82,40 @@ term
     | factor                  { $$ = $1; }
     ;
 
+/* '^' chains: grammatically left-nested, FOLDED here into ONE POW node:
+ *    meters ^ 3 ^ 2  ->  POW(meters, 6)      because (b^a)^c == b^(a*c)
+ * This preserves the unit value exactly (exponents just multiply) and gives
+ * Shreyansh's codegen a single node per power chain. Analyzer stays simple:
+ * it only ever sees POW with a plain-number rhs. */
 factor
     : NUM                     { $$ = ast_new_num($1, @1.first_line); }
     | UNIT                    { $$ = ast_new_unit_lit($1, @1.first_line); }
     | ID                      { $$ = ast_new_var($1, @1.first_line); }
-    | factor '^' NUM          { AstNode *e = ast_new_num($3, @3.first_line);
-                                $$ = ast_new_binary(OP_POW, $1, e, @1.first_line); }
+    | '-' factor              { /* unary minus, desugared — no AST shape the
+                                 analyzer doesn't already grok: (-x) == -1 * x */
+                                $$ = ast_new_binary(OP_MUL,
+                                  ast_new_num(-1.0, @1.first_line), $2,
+                                  @1.first_line); }
+    | '+' factor              { $$ = $2; }
     | '(' expr ')'            { $$ = $2; }
+    | factor '^' NUM          {
+        AstNode *base = $1;
+        AstNode *prev = NULL;
+        double exp = $3;
+        int line = @1.first_line;
+
+        if ($1->kind == AST_BINARY && $1->op == OP_POW
+            && $1->rhs && $1->rhs->kind == AST_NUM) {
+            prev = $1->rhs;
+            base = $1->lhs;
+            $1->lhs = NULL;          /* disconnect children… */
+            $1->rhs = NULL;
+            ast_free($1);            /* …so freeing the wrapper is safe */
+            exp = prev->num * $3;
+        }
+        $$ = ast_new_binary(OP_POW, base, ast_new_num(exp, line), line);
+        if (prev) ast_free(prev);
+      }
     ;
 
 %%

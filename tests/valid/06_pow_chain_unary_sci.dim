@@ -1,0 +1,17 @@
+// 06_pow_chain_unary_sci.dim — Week-2 parser-polish regression (Balraj)
+//
+// Covers the three front-end gaps found in the Week-2 audit:
+//   1. '^' chains fold into ONE POW node with combined exponent
+//      (meters ^ 3 ^ 2  ->  POW(meters, 6), i.e. m^(3*2) — check the AST dump)
+//   2. unary minus desugars to (-1 * x)
+//   3. scientific-notation numbers lex as one NUM token
+//
+// Expected stdout:
+//     front end ok: 4 symbol(s)   (base, neg, tiny, acc)
+//     semantic ok: 4 symbol(s), 0 error(s)
+// Expected exit code: 0
+
+let base = 5 * meters ^ 3 ^ 2;    // m^6 units, single POW node in the AST
+let neg  = -3 * meters;           // unary minus: (-1 * 3) * meters
+let tiny = 1.5e-3 * seconds * meters;  // scientific notation, Speed units
+let acc  = tiny / tiny;

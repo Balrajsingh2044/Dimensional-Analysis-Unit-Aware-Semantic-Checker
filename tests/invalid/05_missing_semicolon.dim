@@ -1,0 +1,7 @@
+// 05_missing_semicolon.dim — parse-error regression (Balraj)
+// The runner's invalid bucket accepts this (grep '^ERROR:' passes); the
+// contract-relevant part is: NO 'front end ok:' / 'semantic ok:' lines and
+// exit code 3 (EXIT_BUILD_ERROR).
+
+let distance = 5 * meters
+let time = 10 * seconds;

@@ -85,6 +85,8 @@ ERROR: Cannot add Length [1,0,0,0,0,0,0] to Time [0,0,1,0,0,0,0]
 ## Build on Windows (no make installed — direct commands, from repo root)
 
 ```bat
+REM if bison ever complains about "missing c-skel"/m4 data (Ayansh's tip),
+REM first:  set BISON_PKGDATADIR=C:\PROGRA~2\GnuWin32\share\bison
 mkdir output
 bison -d -o output\parser.tab.c src\parser.y
 cmd /c "flex -t src\lexer.l > output\lexer.yy.c"
@@ -108,13 +110,16 @@ output\dimc-checker.exe YOUR_FILE.dim
 REM (`output\dimc.exe` appears here only after src/main.c + src/codegen.c land)
 ```
 
-## The .dim language (as of Week 1)
+## The .dim language (as of Week 2)
 
 ```
 let distance = 5 * meters;
 let time     = 10 * seconds;
 let speed    = distance / time;
 let force    = 2 * kg * meters / (seconds ^ 2);
+let energy   = speed * speed;          // works: mul of same units
+let tiny     = 1.5e-3 * seconds;       // scientific notation
+let neg      = -3 * meters;            // unary minus (desugared to -1 * x)
 ```
 
 - `let` declares, plain `name = ...` assigns (must already exist).
@@ -122,8 +127,27 @@ let force    = 2 * kg * meters / (seconds ^ 2);
   `feet`, `hours`, ...) are **first-class tokens**.
 - Single-letter aliases `m`, `s`, `kg`, ... are reserved as units — don't use
   them as variable names.
+- Numbers: integer, decimal, and scientific notation (`1.5e-3`).
+- `^` chains are **left-associative and folded**: `meters ^ 3 ^ 2` produces
+  one `POW(meters, 6)` AST node with exponent `3*2` ((b^a)^c == b^(a*c)).
+  Exponents must be plain numbers (per semantic rules, fractional exp = ERROR).
+- Unary minus binds looser than `^`: `-x ^ 2` == `-(x ^ 2)` (C-style).
+- Parse errors → exit 3; semantic errors → exit 1 (see contract table above).
 
 ## Known notes for teammates
+
+- **Ayansh (Valgrind baseline, Week-2 ask):** the `make valgrind` baseline is
+  wired (vec_test + symtab_test + dimc-checker on `00_basic_fe_check.dim`).
+  Balraj's Windows box has NO valgrind and NO WSL — **please run it once on
+  your machine or Shreyansh's** and paste the leak summary here; there are
+  known-clean paths in principle (`symtab_destroy`, `ast_free` on success
+  AND error paths, token destructors) but an actual valgrind run is the
+  deliverable. If you find leaks, first suspects: parser error-path nodes
+  (bison 2.4.1 has no usable `<node>` destructor — see note at bottom).
+- **Ayansh (collect_decls retirement — no Week-3 conflict):** audit DONE,
+  agreed on both counts. The Week-3 symbol-table performance work (resize
+  benchmarks, deeper hashing) is orthogonal to who inserts symbols — the
+  analyzer inserting in source order makes no difference to symtab.c.
 
 - **Ayansh:** Phase 3 is DONE and integrated (see `include/semantic.h`).
   `semantic_check(st, prog)` is the only entry point the driver needs.

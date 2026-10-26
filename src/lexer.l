@@ -28,15 +28,15 @@ int g_lex_errors = 0;
 "#"[^\n]*     ;    /* # comment */
 "//"[^\n]*    ;    /* C++-style comment, also legal */
 
-[0-9]+\.[0-9]+ {
+[0-9]+\.[0-9]+([eE][+-]?[0-9]+)? {
     yylloc.first_line = yylineno;
     yylval.num = atof(yytext);
     return NUM;
 }
 
-[0-9]+ {
+[0-9]+([eE][+-]?[0-9]+)? {
     yylloc.first_line = yylineno;
-    yylval.num = (double)atoi(yytext);
+    yylval.num = atof(yytext);     /* atof handles int + scientific too */
     return NUM;
 }
 
