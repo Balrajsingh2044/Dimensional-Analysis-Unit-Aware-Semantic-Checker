@@ -3,7 +3,8 @@
 ## For Shreyansh (Slides & Demo)
 - **The Hook:** Start with the Mars Climate Orbiter disaster. 
 - **The Climax:** Run `./dimc tests/invalid/04_metric_imperial.dim`. Show the custom error: *"same dimension but different unit size — metric vs imperial?"*.
-- **The Magic:** Run `./dimc demo/mars_valid.dim`. Show the output: *"Our compiler reduces complex physics equations down to just 3 lines of pure, optimized C."*
+- **The Magic:** Run `./output/dimc demo/mars_valid.dim`. Show the output: *"Our compiler reduces complex physics equations down to just 3 lines of pure, optimized C."*
+- **The Answer (bonus flag):** Run `./output/dimc -p demo/mars_valid.dim` — one extra line appears in the generated `main()`: `printf("%g\n", impulse);`. Compile it and it prints **4500** — *"the compiler not only protects the calculation, it hands you the answer."*
 - **The QA Flex:** Mention on the testing slide: *"We built a portable heap-auditor (`make audit`) and verified 0 memory leaks in the happy path and codegen."*
 
 ## For Ayansh (Q&A Prep)

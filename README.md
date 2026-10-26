@@ -25,6 +25,10 @@ dimension, different canonical size) is a hard compile-time error.
 make clean && make
 ./tests/run_tests.sh                 # 16/16 cases, no skips
 ./output/dimc demo/mars_valid.dim    # full pipeline demo
+./output/dimc -p demo/mars_valid.dim # ...and the generated main() also
+                                     # PRINTS the most recently assigned
+                                     # variable (the "compiler hands you
+                                     # the answer" flag)
 ```
 
 Other useful targets: `make test` (unitvec/symtab/semantic suites), and

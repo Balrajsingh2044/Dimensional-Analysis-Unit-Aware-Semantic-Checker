@@ -3,6 +3,9 @@
  * semantic/design change, just the calling order we all signed off on).
  *
  *   dimc FILE.dim [out.c]
+ *   dimc -p FILE.dim [out.c]        (Week-4 additive: also print the most
+ *                                    recently assigned variable — the
+ *                                    "compiler hands you the answer" flag)
  *
  *   1. lex + parse                  → exit 3 on parse error (stderr only)
  *   2. semantic_check(fresh SymTab) → exit 1 on any unit violation
@@ -30,15 +33,23 @@ int main(int argc, char **argv) {
     SymTab *st;
     int     sem_errors;
     int     cg;
+    int     idx = 1;          /* first positional argument */
+    int     print_last = 0;
 
-    if (argc != 2 && argc != 3) {
-        fprintf(stderr, "usage: %s program.dim [out.c]\n", argv[0]);
+    /* -p (print the answer) is additive and optional; all original
+     * 2-argument / 3-argument forms behave exactly as before. */
+    if (argc > 1 && strcmp(argv[1], "-p") == 0) {
+        print_last = 1;
+        idx = 2;
+    }
+    if (argc != idx + 1 && argc != idx + 2) {
+        fprintf(stderr, "usage: %s [-p] program.dim [out.c]\n", argv[0]);
         return EXIT_USAGE;
     }
 
-    fp = fopen(argv[1], "r");
+    fp = fopen(argv[idx], "r");
     if (!fp) {
-        DIM_ERR("cannot open input file '%s'", argv[1]);
+        DIM_ERR("cannot open input file '%s'", argv[idx]);
         return EXIT_USAGE;
     }
     yyin = fp;
@@ -68,7 +79,8 @@ int main(int argc, char **argv) {
     }
 
     /* ── 3. emit ── */
-    cg = codegen_emit(g_program, argc == 3 ? argv[2] : NULL);
+    cg = codegen_emit_print(g_program, argc == idx + 2 ? argv[idx + 1] : NULL,
+                            print_last);
 
     ast_free(g_program);
     g_program = NULL;

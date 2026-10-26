@@ -184,7 +184,8 @@ static int seen_has(Seen *s, const char *name) {
     return 0;
 }
 
-static void emit_stmt(FILE *o, const AstNode *stmt, Seen **seen) {
+static void emit_stmt(FILE *o, const AstNode *stmt, Seen **seen,
+                      const char **last_var) {
     Seen *n;
     if (!stmt) return;
 
@@ -203,6 +204,7 @@ static void emit_stmt(FILE *o, const AstNode *stmt, Seen **seen) {
             }
             emit_expr(o, stmt->rhs, 0, 0);
             fputs(";\n", o);
+            if (stmt->name) *last_var = stmt->name;   /* -p hook */
             break;
 
         default:   /* bare expression: side-effect-free in .dim, drop it */
@@ -213,10 +215,16 @@ static void emit_stmt(FILE *o, const AstNode *stmt, Seen **seen) {
 /* ------------------------------------------------ entry point */
 
 int codegen_emit(const AstNode *prog, const char *outname) {
+    return codegen_emit_print(prog, outname, 0);
+}
+
+int codegen_emit_print(const AstNode *prog, const char *outname,
+                       int print_last) {
     FILE *out = stdout;
     const AstNode *s;
     Seen *seen = NULL;
     int ok = 1;
+    const char *last_var = NULL;   /* for the -p 'hand you the answer' line */
 
     if (outname) {
         out = fopen(outname, "w");
@@ -234,7 +242,12 @@ int codegen_emit(const AstNode *prog, const char *outname) {
         "int main(void) {\n");
 
     for (s = prog; s; s = s->next)
-        emit_stmt(out, s, &seen);
+        emit_stmt(out, s, &seen, &last_var);
+
+    /* Week-4 additive flag (-p): the program's computed answer, printed.
+     * %g handles both int-shaped and double-shaped constants. */
+    if (print_last && last_var)
+        fprintf(out, "    printf(\"%%g\\n\", %s);\n", last_var);
 
     fprintf(out, "    return 0;\n}\n");
 
