@@ -10,9 +10,15 @@ CORE_HDRS = include/common.h include/unitvec.h
 FE_HDRS   = include/ast.h $(CORE_HDRS)
 ST_HDRS   = include/symtab.h $(FE_HDRS)
 
-.PHONY: all test clean valgrind vec_test symtab_test fe
+.PHONY: all test clean valgrind vec_test symtab_test fe checker
 
-all: $(BIN)/vec_test $(BIN)/symtab_test $(BIN)/semantic_test $(BIN)/dimc
+# Shreyansh's src/main.c + src/codegen.c are wildcard-guarded: the moment
+# they are pushed, `make`/`make all` builds the unified ./dimc too. Until
+# then `all` skips it and he does NOT need to touch this Makefile.
+HAS_BE := $(wildcard src/main.c)$(wildcard src/codegen.c)
+
+all: $(BIN)/vec_test $(BIN)/symtab_test $(BIN)/semantic_test $(BIN)/dimc-checker \
+     $(if $(HAS_BE),$(BIN)/dimc)
 
 $(BIN):
 	@mkdir -p $(BIN)
@@ -69,14 +75,30 @@ $(BIN)/lexer.yy.o: src/lexer.l $(BIN)/parser.tab.o | $(BIN)
 $(BIN)/frontend_main.o: src/frontend_main.c $(ST_HDRS) | $(BIN)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-$(BIN)/dimc: $(BIN)/lexer.yy.o $(BIN)/parser.tab.o $(BIN)/ast.o \
+$(BIN)/dimc-checker: $(BIN)/lexer.yy.o $(BIN)/parser.tab.o $(BIN)/ast.o \
             $(BIN)/symtab.o $(BIN)/unitvec.o $(BIN)/semantic.o \
             $(BIN)/semantic_ops.o $(BIN)/frontend_main.o
 	$(CC) $(CFLAGS) -o $@ $^
 
-# front end + semantic: full checker until Shreyansh's codegen lands
-fe: $(BIN)/dimc
-	./$(BIN)/dimc $(FILE)
+# final unified pipeline (Shreyansh's main.c + codegen.c + everything).
+# Building this before those files exist fails with the missing-file error —
+# which is the cue to run `make checker` (front end + analyzer only) instead.
+$(BIN)/main.o: src/main.c $(SEM_HDRS) | $(BIN)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(BIN)/codegen.o: src/codegen.c $(SEM_HDRS) | $(BIN)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(BIN)/dimc: $(BIN)/lexer.yy.o $(BIN)/parser.tab.o $(BIN)/ast.o \
+            $(BIN)/symtab.o $(BIN)/unitvec.o $(BIN)/semantic.o \
+            $(BIN)/semantic_ops.o $(BIN)/frontend_main.o \
+            $(BIN)/codegen.o $(BIN)/main.o
+	$(CC) $(CFLAGS) -o $@ $^
+
+# Phase-3 checker (parse + AST + analyzer), no codegen yet. old alias kept:
+checker: $(BIN)/dimc-checker
+	./$(BIN)/dimc-checker $(FILE)
+fe: checker
 
 test: vec_test symtab_test semantic_test
 	@echo "all contract tests passed"
@@ -85,7 +107,7 @@ test: vec_test symtab_test semantic_test
 valgrind: all
 	$(VALGRIND) ./$(BIN)/vec_test
 	$(VALGRIND) ./$(BIN)/symtab_test
-	$(VALGRIND) ./$(BIN)/dimc demo/basic_fe_check.dim
+	$(VALGRIND) ./$(BIN)/dimc-checker tests/valid/00_basic_fe_check.dim
 
 clean:
 	rm -rf $(BIN)

@@ -1,11 +1,24 @@
-/* frontend_main.c — front-end test driver (Balraj).
+/* frontend_main.c — Phase-3 checker driver (Balraj).
  *
- * Runs the lexer + parser on a .dim file, prints the AST, seeds the symbol
- * table from the declarations, and dumps it. This is the Week-2 milestone
- * ("parser feeds AST; symbol table works") WITHOUT Ayansh's analyzer —
- * units stay "(unfilled)" until semantic.c hooks in here.
+ * Parser + semantic analyzer, printed ASTs and symbolic dumps for debugging.
+ * TWO binaries on purpose (tooling decision, see Makefile):
+ *   out/dimc-checker : THIS driver  (front end + analyzer; debug-friendly)
+ *   out/dimc         : Shreyansh's main.c (same skeleton minus the dumps,
+ *                      plus codegen) — final project deliverable
  *
- * Build:  make dimc        Run:  ./output/dimc program.dim
+ * BUILD:  make checker FILE=tests/valid/00_basic_fe_check.dim
+ * RUN :   ./output/dimc-checker program.dim
+ *
+ * ── Test-runner contract (frozen; do not change formats) ──────────────────
+ * exit 0  and BOTH lines on stdout iff parse AND semantic analysis are clean:
+ *     front end ok: <N> symbol(s)
+ *     semantic ok:  <N> symbol(s), 0 error(s)   (tag: 'semantic ok:')
+ * Parse failure  -> NO such lines, exit 3, 'ERROR: parse error ...' on stderr.
+ * Semantic error -> 'front end ok:' still printed, NO 'semantic ok:' line,
+ *                   'ERROR: semantic check failed…' on stderr, exit 1.
+ * Every other ERROR/ WARNING diagnostic goes to stderr.
+ * Grep guidance for run_tests.sh: grep -F 'front end ok:' — never parse
+ * the AST dump; the AST dump format is debug output only.
  */
 #include "ast.h"
 #include "semantic.h"   /* Ayansh's analyzer — hooked in at Integration Point #2 */

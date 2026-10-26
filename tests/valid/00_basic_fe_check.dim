@@ -1,0 +1,12 @@
+// 00_basic_fe_check.dim — front-end + analyzer smoke test (Balraj)
+//
+// Expected stdout (each line exactly once):
+//     front end ok: 4 symbol(s)
+//     semantic ok: 4 symbol(s), 0 error(s)
+//     (plus AST debug block)
+// Expected exit code: 0
+
+let distance = 5 * meters;
+let time     = 10 * seconds;
+let speed    = distance / time;
+let force    = 2 * kg * meters / (seconds ^ 2);

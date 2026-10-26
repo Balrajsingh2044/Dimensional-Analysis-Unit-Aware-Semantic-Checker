@@ -41,10 +41,37 @@ by agreement. Everything else merges on integration points.
 ## Build (Linux / WSL — use the Makefile)
 
 ```sh
-make            # builds vec_test, symtab_test, semantic_test, dimc
+make            # contract tests + dimc-checker (+ dimc automatically once
+                # src/main.c AND src/codegen.c exist in the repo)
 make test       # runs the contract tests
-make fe FILE=demo/valid.dim   # front end + semantic analyzer
+make checker FILE=tests/valid/00_basic_fe_check.dim   # front end + analyzer
 ```
+
+**Two binaries — don't mix them up:**
+
+| binary | contains | owner |
+|---|---|---|
+| `output/dimc-checker` | lexer/parser/AST + symbol table + **semantic analyzer** (debug dumps) | Balraj |
+| `output/dimc` | all of the above + **codegen** (final deliverable) | Shreyansh (`src/main.c`) |
+
+## Test-runner contract (for run_tests.sh — grep these, do NOT parse the AST dump)
+
+Frozen output of `output/dimc-checker FILE.dim`:
+
+| case | stdout contract | stderr | exit |
+|---|---|---|---|
+| valid program | `front end ok: <N> symbol(s)` **and** `semantic ok: <N> symbol(s), 0 error(s)` (each exactly once) + debug AST/symtab block | possibly warnings | 0 |
+| parse error | NO contract lines | `ERROR: parse error (line N): …` | 3 (`EXIT_BUILD_ERROR`) |
+| semantic error | `front end ok: …` printed, **no** `semantic ok:` line | `ERROR: semantic check failed…` + filtered per-error diagnostics | 1 (`EXIT_COMPILE_ERROR`) |
+| bad usage / no file | — | usage / `cannot open` | 2 (`EXIT_USAGE`) |
+
+Suggested greps (safe against the debug dumps):
+```sh
+grep -Fq 'front end ok:' out.txt && \
+grep -Fq 'semantic ok'   out.txt   # valid case
+# invalid case uses the exit code + grep -F of the expected diagnostic text
+```
+
 
 **Semantic status (Integration Point #2 DONE).** `dimc` now runs the full
 unit-aware checker: `declared: speed : Length/Time [1,0,-1,0,0,0,0]` lines,
@@ -69,7 +96,7 @@ gcc -Wall -Wextra -g -O0 -std=c11 -Iinclude -Ioutput -c src\symtab.c -o output\s
 gcc -Wall -Wextra -g -O0 -std=c11 -Iinclude -c src\semantic.c -o output\semantic.o
 gcc -Wall -Wextra -g -O0 -std=c11 -Iinclude -c src\semantic_ops.c -o output\semantic_ops.o
 gcc -Wall -Wextra -g -O0 -std=c11 -Iinclude -Ioutput -c src\frontend_main.c -o output\frontend_main.o
-gcc -Wall -Wextra -g -O0 -std=c11 -Iinclude -Ioutput -o output\dimc.exe output\lexer.yy.o output\parser.tab.o output\ast.o output\symtab.o output\unitvec.o output\semantic.o output\semantic_ops.o output\frontend_main.o
+gcc -Wall -Wextra -g -O0 -std=c11 -Iinclude -Ioutput -o output\dimc-checker.exe output\lexer.yy.o output\parser.tab.o output\ast.o output\symtab.o output\unitvec.o output\semantic.o output\semantic_ops.o output\frontend_main.o
 gcc -Wall -Wextra -g -O0 -std=c11 -Iinclude -o output\vec_test.exe src\vec_test.c output\unitvec.o
 gcc -Wall -Wextra -g -O0 -std=c11 -Iinclude -o output\symtab_test.exe src\symtab_test.c output\symtab.o output\unitvec.o
 gcc -Wall -Wextra -g -O0 -std=c11 -Iinclude -o output\semantic_test.exe src\semantic_test.c output\semantic.o output\semantic_ops.o output\symtab.o output\unitvec.o output\ast.o
@@ -77,7 +104,8 @@ gcc -Wall -Wextra -g -O0 -std=c11 -Iinclude -o output\semantic_test.exe src\sema
 output\vec_test.exe          REM 20 checks
 output\symtab_test.exe       REM 12 checks
 output\semantic_test.exe     REM 15 checks (semantic analyzer)
-output\dimc.exe YOUR_FILE.dim
+output\dimc-checker.exe YOUR_FILE.dim
+REM (`output\dimc.exe` appears here only after src/main.c + src/codegen.c land)
 ```
 
 ## The .dim language (as of Week 1)
