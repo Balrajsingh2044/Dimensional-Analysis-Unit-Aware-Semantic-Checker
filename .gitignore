@@ -1,0 +1,16 @@
+# build artifacts
+output/
+*.o
+*.obj
+*.exe
+a.out
+
+# flex/bison generated
+lexer.yy.c
+parser.tab.c
+parser.tab.h
+
+# logs / dumps
+*.dot
+*.png
+!docs/diagrams/*.png
