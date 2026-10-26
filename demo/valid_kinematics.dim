@@ -1,0 +1,7 @@
+# Demo — valid program: kinematics -> force -> energy (Sem 3 component)
+let distance = 5 * meters;
+let time     = 10 * seconds;
+let speed    = distance / time;      # m/s
+let accel    = speed / time;         # m/s^2
+let force    = 2 * kg * accel;       # kg*m/s^2
+let energy   = force * distance;     # kg*m^2/s^2 (joules)

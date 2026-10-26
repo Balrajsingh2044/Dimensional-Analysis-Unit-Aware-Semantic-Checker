@@ -8,6 +8,7 @@
  * Build:  make dimc        Run:  ./output/dimc program.dim
  */
 #include "ast.h"
+#include "semantic.h"   /* Ayansh's analyzer — hooked in at Integration Point #2 */
 #include "symtab.h"
 #include "common.h"
 
@@ -18,9 +19,15 @@ extern int      g_parse_errors;
 
 /* ------------------------------------------------ declaration seeding */
 
-/* Collect declared identifiers into the symbol table (front-end duty;
- * Ayansh's analyzer will fill their units via symtab_update_unit).
- * Simple scope model for now: one global scope, like the design says. */
+/* NOTE (Ayansh -> Balraj): collect_decls() is RETIRED as of the semantic
+ * hook-up. It seeded every `let` with a placeholder unit BEFORE analysis,
+ * which (a) made use-before-declare undetectable and (b) would collide
+ * with semantic_check()'s own declare-on-`let` (false redeclarations).
+ * The analyzer now owns symbol-table population in source order.
+ * If you want the old front-end-only behavior, use `make fe FILE=...`
+ * against a checkout before this change, or pass a flag later.
+ */
+#if 0
 static void collect_decls(const AstNode *prog, SymTab *st) {
     const AstNode *stmt;
 
@@ -49,6 +56,8 @@ static void collect_decls(const AstNode *prog, SymTab *st) {
     }
 }
 
+#endif /* retired collect_decls */
+
 /* ------------------------------------------------ main */
 
 int main(int argc, char **argv) {
@@ -72,14 +81,21 @@ int main(int argc, char **argv) {
         DIM_ERR("front end failed with %d parse error(s)", g_parse_errors);
         exit_code = EXIT_BUILD_ERROR;
     } else {
+        int sem_errors;
         ast_print(g_program, stdout);
 
+        /* Ayansh's analyzer: folds units, declares on `let`, reports errors */
         st = symtab_create();
-        collect_decls(g_program, st);
+        sem_errors = semantic_check(st, g_program);
         symtab_print(st, stdout);
 
-        /* symbol-table snapshot for tests that grep the output */
+        /* snapshot lines for the test runner (keep both greppable) */
         printf("front end ok: %zu symbol(s)\n", symtab_count(st));
+        if (sem_errors == 0)
+            printf("semantic ok: %zu symbol(s), 0 error(s)\n", symtab_count(st));
+        else
+            DIM_ERR("semantic check failed with %d error(s)", sem_errors);
+        exit_code = (sem_errors > 0) ? EXIT_COMPILE_ERROR : EXIT_COMPILE_OK;
 
         symtab_destroy(st);
     }
