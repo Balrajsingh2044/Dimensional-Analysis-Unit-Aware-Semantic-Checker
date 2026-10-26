@@ -1,0 +1,26 @@
+# Demo — dimension-aware numerical calculation (Balraj presentation core)
+# A 70 kg person climbs 10 m against gravity, in pure SI.
+# Every intermediate gets a 7-D vector + scale at compile time, and the
+# EMITTED C carries the CORRECT folded numerical result of the physics.
+#
+# Expected dimension chain (7-D order is [m, kg, s, A, K, mol, cd]):
+#   mass : Mass   [0,1,0,0,0,0,0]
+#   h    : Length [1,0,0,0,0,0,0]
+#   g    : Length/Time^2 [1,0,-2,0,0,0,0]
+#   pe   : mass * g * h -> Mass*Length^2/Time^2 = [2,1,-2,0,0,0,0]  (a Joule!)
+# Expected value chain after unit stripping: pe = 70 * 10 * 10 = 7000 J.
+# NOTE: single-letter aliases (m, s, kg, ...) are RESERVED for units —
+# use "mass", not "m", as a variable name.
+
+let mass = 70 * kilograms;                # Mass
+let h    = 10 * meters;                   # Length
+let g    = 10 * meters / (seconds ^ 2);   # acceleration: Length/Time^2
+let pe   = mass * g * h;                  # energy in Joules (kg*m^2/s^2)
+
+# dimension errors are caught BEFORE any C is emitted:
+#   let bad = mass + h;                     Mass + Length -> ERROR
+#   let bad2 = pe + 1 * meters;             Energy + Length -> ERROR
+
+# scale math inside calculations:
+let jump_cm  = 5 * kilometers / meters;   # dimensionless, folds to 5000
+let same_len = h + 2 * meters;            # 10 + 2 = 12 (same scale 1.0, ok)
