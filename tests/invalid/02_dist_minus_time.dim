@@ -1,0 +1,3 @@
+let distance = 5 * meters;
+let time = 10 * seconds;
+let bad = distance - time;

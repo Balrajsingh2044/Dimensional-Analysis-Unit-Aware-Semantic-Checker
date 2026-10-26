@@ -10,11 +10,11 @@ CORE_HDRS = include/common.h include/unitvec.h
 FE_HDRS   = include/ast.h $(CORE_HDRS)
 ST_HDRS   = include/symtab.h $(FE_HDRS)
 
-.PHONY: all test clean valgrind vec_test symtab_test fe checker
+.PHONY: all test clean valgrind vec_test symtab_test fe checker pipeline
 
 # Shreyansh's src/main.c + src/codegen.c are wildcard-guarded: the moment
-# they are pushed, `make`/`make all` builds the unified ./dimc too. Until
-# then `all` skips it and he does NOT need to touch this Makefile.
+# both exist, `make`/`make all` builds the unified ./dimc too. Until
+# src/main.c lands, `all` skips it.
 HAS_BE := $(wildcard src/main.c)$(wildcard src/codegen.c)
 
 all: $(BIN)/vec_test $(BIN)/symtab_test $(BIN)/semantic_test $(BIN)/dimc-checker \
@@ -72,7 +72,7 @@ $(BIN)/lexer.yy.o: src/lexer.l $(BIN)/parser.tab.o | $(BIN)
 	$(FLEX) -o$(BIN)/lexer.yy.c $<
 	$(CC) $(CFLAGS) -c $(BIN)/lexer.yy.c -o $@
 
-$(BIN)/frontend_main.o: src/frontend_main.c $(ST_HDRS) | $(BIN)
+$(BIN)/frontend_main.o: src/frontend_main.c $(ST_HDRS) $(SEM_HDRS) | $(BIN)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 $(BIN)/dimc-checker: $(BIN)/lexer.yy.o $(BIN)/parser.tab.o $(BIN)/ast.o \
@@ -81,12 +81,13 @@ $(BIN)/dimc-checker: $(BIN)/lexer.yy.o $(BIN)/parser.tab.o $(BIN)/ast.o \
 	$(CC) $(CFLAGS) -o $@ $^
 
 # final unified pipeline (Shreyansh's main.c + codegen.c + everything).
-# Building this before those files exist fails with the missing-file error —
+# Building this before src/main.c exists fails with the missing-file error —
 # which is the cue to run `make checker` (front end + analyzer only) instead.
 $(BIN)/main.o: src/main.c $(SEM_HDRS) | $(BIN)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-$(BIN)/codegen.o: src/codegen.c $(SEM_HDRS) | $(BIN)
+CG_HDRS = include/codegen.h $(SEM_HDRS)
+$(BIN)/codegen.o: src/codegen.c $(CG_HDRS) | $(BIN)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 $(BIN)/dimc: $(BIN)/lexer.yy.o $(BIN)/parser.tab.o $(BIN)/ast.o \
@@ -102,6 +103,10 @@ fe: checker
 
 test: vec_test symtab_test semantic_test
 	@echo "all contract tests passed"
+
+# ---------------- Shreyansh: test suite ----------------
+tests:
+	./tests/run_tests.sh
 
 # ---------------- QA (run under WSL/Linux, not Windows cmd) ----------------
 valgrind: all

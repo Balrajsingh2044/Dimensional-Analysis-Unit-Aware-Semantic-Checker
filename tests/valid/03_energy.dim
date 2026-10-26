@@ -1,0 +1,3 @@
+let mass = 1 * kg;
+let velocity = 10 * meters / seconds;
+let kinetic = 0.5 * mass * velocity * velocity;
