@@ -1,0 +1,2 @@
+# Demo — cancellation: m / m cancels to a scalar, free to add to 7
+let ratio = (meters / meters) + 7;

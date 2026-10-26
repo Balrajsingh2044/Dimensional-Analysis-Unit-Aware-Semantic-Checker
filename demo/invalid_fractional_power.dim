@@ -1,0 +1,2 @@
+# Demo — fractional exponent is rejected (only integer exponents supported)
+let area = meters ^ 1.5;

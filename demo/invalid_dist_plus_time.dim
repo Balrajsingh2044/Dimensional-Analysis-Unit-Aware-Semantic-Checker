@@ -1,0 +1,4 @@
+# Demo — classic dimensional nonsense (Mars Climate Orbiter flavor)
+let distance = 5 * meters;
+let time     = 10 * seconds;
+let bad_sum  = distance + time;      # ERROR: Length + Time
