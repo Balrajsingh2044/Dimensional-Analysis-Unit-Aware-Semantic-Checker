@@ -86,7 +86,7 @@ void sem_err_add_sub_scale(const AstNode *n, UnitVec lu, UnitVec ru) {
     DIM_ERR("Cannot add %s %s across scales: %g (SI) vs %g (SI)",
             ld, lv, uv_scale(lu), uv_scale(ru));
     DIM_NOTE("line %d: while checking '%s'; same dimension but different "
-             "unit size (metric vs imperial?) — convert explicitly first",
+             "unit size (metric vs imperial?) -- convert explicitly first",
              n->line, ex);
 }
 

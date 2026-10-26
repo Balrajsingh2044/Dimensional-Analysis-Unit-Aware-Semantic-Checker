@@ -1,0 +1,7 @@
+let side     = 3 * meters;
+let breath   = 4 * meters;
+let area     = side * breath;
+let time     = 6 * seconds;
+let rainrate = area / time;
+let density  = 800 * kilograms;
+let oops     = density + rainrate;

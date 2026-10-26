@@ -160,7 +160,7 @@ static void ast_print_rec(const AstNode *n, int depth) {
 }
 
 void ast_print(const AstNode *n, FILE *out) {
-    fprintf(out, "── AST ──\n");
+    fprintf(out, "== AST ==\n");
     while (n) {
         ast_print_rec(n, 0);
         if (n->next) printf("\n");

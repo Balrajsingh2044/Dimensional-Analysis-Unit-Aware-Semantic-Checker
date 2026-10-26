@@ -144,7 +144,7 @@ size_t symtab_count(SymTab *st) { return st ? st->count : 0; }
 void symtab_print(SymTab *st, FILE *out) {
     size_t i;
     char ubuf[64];
-    fprintf(out, "── symbol table (%zu symbols) ──\n", symtab_count(st));
+    fprintf(out, "== symbol table (%zu symbols) ==\n", symtab_count(st));
     for (i = 0; i < st->nbuckets; i++) {
         Symbol *s;
         for (s = st->buckets[i]; s; s = s->next) {
