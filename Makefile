@@ -11,7 +11,7 @@ CORE_HDRS = include/common.h include/unitvec.h
 FE_HDRS   = include/ast.h $(CORE_HDRS)
 ST_HDRS   = include/symtab.h $(FE_HDRS)
 
-.PHONY: all test clean valgrind vec_test symtab_test fe checker pipeline
+.PHONY: all test clean valgrind vec_test symtab_test fe checker pipeline audit audit-body
 
 # Shreyansh's src/main.c + src/codegen.c are wildcard-guarded: the moment
 # both exist, `make`/`make all` builds the unified ./dimc too. Until
@@ -118,6 +118,75 @@ valgrind: all
 	$(VALGRIND) ./$(BIN)/vec_test
 	$(VALGRIND) ./$(BIN)/symtab_test
 	$(VALGRIND) ./$(BIN)/dimc-checker tests/valid/00_basic_fe_check.dim
+
+# ---------------- portable leak audit (Balraj, final QA) ----------------
+# Works on ANY machine with gcc (Windows included — no valgrind/WSL needed):
+# same 5 contexts as Ayansh's HOWTO table, in-use-at-exit metric identical.
+# alloc_audit.c must be compiled WITHOUT the -include flag (self-wrap = recursion).
+# Linux fallback where valgrind is missing, and cross-check where it isn't.
+AUDIT_FLAGS = $(CFLAGS) -include src/alloc_audit.h -DALLOC_AUDIT
+
+.PHONY: audit-body
+audit-body: $(BIN)/audit/vec_test $(BIN)/audit/symtab_test $(BIN)/audit/semantic_test \
+            $(BIN)/audit/dimc-checker $(BIN)/audit/dimc
+
+$(BIN)/audit $(BIN)/audit/:
+	mkdir -p $(BIN)/audit
+
+$(BIN)/audit/alloc_audit.o: src/alloc_audit.c | $(BIN)/audit
+	$(CC) $(CFLAGS) -c src/alloc_audit.c -o $@
+
+$(BIN)/audit/frontend_checker.o: src/frontend_main.c $(wildcard include/*.h) src/alloc_audit.h | $(BIN)/audit
+	$(CC) $(AUDIT_FLAGS) -DBUILD_CHECKER -c $< -o $@
+
+$(BIN)/audit/lexer.yy.o: $(BIN)/lexer.yy.c $(wildcard include/*.h) src/alloc_audit.h | $(BIN)/audit
+	$(CC) $(AUDIT_FLAGS) -c $< -o $@
+
+$(BIN)/audit/parser.tab.o: $(BIN)/parser.tab.c $(wildcard include/*.h) src/alloc_audit.h | $(BIN)/audit
+	$(CC) $(AUDIT_FLAGS) -c $< -o $@
+
+$(BIN)/audit/%.o: src/%.c $(wildcard include/*.h) src/alloc_audit.h | $(BIN)/audit
+	$(CC) $(AUDIT_FLAGS) -c $< -o $@
+
+$(BIN)/audit/vec_test: $(BIN)/audit/vec_test.o $(BIN)/audit/unitvec.o \
+                       $(BIN)/audit/alloc_audit.o
+	$(CC) $(AUDIT_FLAGS) -o $@ $^ $(LDLIBS)
+
+$(BIN)/audit/symtab_test: $(BIN)/audit/symtab_test.o $(BIN)/audit/symtab.o \
+                          $(BIN)/audit/unitvec.o $(BIN)/audit/alloc_audit.o
+	$(CC) $(AUDIT_FLAGS) -o $@ $^ $(LDLIBS)
+
+$(BIN)/audit/semantic_test: $(BIN)/audit/semantic_test.o $(BIN)/audit/semantic.o \
+                            $(BIN)/audit/semantic_ops.o $(BIN)/audit/symtab.o \
+                            $(BIN)/audit/unitvec.o $(BIN)/audit/ast.o \
+                            $(BIN)/audit/alloc_audit.o
+	$(CC) $(AUDIT_FLAGS) -o $@ $^ $(LDLIBS)
+
+$(BIN)/audit/dimc-checker: $(BIN)/audit/lexer.yy.o $(BIN)/audit/parser.tab.o \
+                           $(BIN)/audit/ast.o $(BIN)/audit/symtab.o \
+                           $(BIN)/audit/unitvec.o $(BIN)/audit/semantic.o \
+                           $(BIN)/audit/semantic_ops.o $(BIN)/audit/frontend_checker.o \
+                           $(BIN)/audit/alloc_audit.o
+	$(CC) $(AUDIT_FLAGS) -o $@ $^ $(LDLIBS)
+
+$(BIN)/audit/dimc: $(BIN)/audit/lexer.yy.o $(BIN)/audit/parser.tab.o \
+                   $(BIN)/audit/ast.o $(BIN)/audit/symtab.o $(BIN)/audit/unitvec.o \
+                   $(BIN)/audit/semantic.o $(BIN)/audit/semantic_ops.o \
+                   $(BIN)/audit/frontend_main.o $(BIN)/audit/codegen.o \
+                   $(BIN)/audit/main.o $(BIN)/audit/alloc_audit.o
+	$(CC) $(AUDIT_FLAGS) -o $@ $^ $(LDLIBS)
+
+# The five report contexts from docs/valgrind_baseline_HOWTO.md + extras:
+audit: audit-body
+	./$(BIN)/audit/vec_test
+	./$(BIN)/audit/symtab_test
+	./$(BIN)/audit/semantic_test
+	./$(BIN)/audit/dimc-checker tests/valid/00_basic_fe_check.dim
+	./$(BIN)/audit/dimc-checker tests/invalid/01_dist_plus_time.dim
+	./$(BIN)/audit/dimc-checker tests/invalid/04_metric_imperial.dim
+	./$(BIN)/audit/dimc-checker tests/invalid/05_missing_semicolon.dim
+	./$(BIN)/audit/dimc.exe demo/mars_valid.dim
+	./$(BIN)/audit/dimc.exe tests/invalid/04_metric_imperial.dim
 
 clean:
 	rm -rf $(BIN)

@@ -153,6 +153,12 @@ output\symtab_test.exe       REM 16 checks
 output\semantic_test.exe     REM 22 checks (semantic analyzer)
 output\dimc-checker.exe YOUR_FILE.dim
 output\dimc.exe YOUR_FILE.dim [out.c]
+
+REM — final-QA leak audit (portable, no valgrind needed): rebuild EVERY
+REM    object with the ledger shim -include src\alloc_audit.h -DALLOC_AUDIT
+REM    (alloc_audit.c itself WITHOUT the -include flag), link 5 audit binaries
+REM    into output\audit\, run the 9 contexts from docs\valgrind_report.md.
+REM    On Linux/WSL the one-liner is simply:  make audit
 ```
 
 ## The .dim language (as of Week 2)
@@ -188,14 +194,20 @@ let neg      = -3 * meters;            // unary minus (desugared to -1 * x)
 
 ## Known notes for teammates
 
-- **Ayansh (Valgrind baseline, Week-2 ask):** the `make valgrind` baseline is
-  wired (vec_test + symtab_test + dimc-checker on `00_basic_fe_check.dim`).
-  Balraj's Windows box has NO valgrind and NO WSL — **please run it once on
-  your machine or Shreyansh's** and paste the leak summary here; there are
-  known-clean paths in principle (`symtab_destroy`, `ast_free` on success
-  AND error paths, token destructors) but an actual valgrind run is the
-  deliverable. If you find leaks, first suspects: parser error-path nodes
-  (bison 2.4.1 has no usable `<node>` destructor — see note at bottom).
+- **Ayansh (Valgrind baseline, Week-2 ask):** ✅ ANSWERED — see
+  `docs/valgrind_report.md` (filled in the HOWTO's template). Deliverable
+  summary: every pipeline/engine context is leak-clean (0 blocks in-use at
+  exit) UP TO two documented findings: (A) a missing `ast_free` in
+  `semantic_test.c` — fixed (test file), and (B) the parse-error path keeps
+  3 unreduced AST nodes + 1 token string (4 blocks / 343 bytes) — exactly
+  the bison-2.4.1 no-usable-`%destructor` limitation; captured, **not**
+  fixed, awaiting a contract-level decision (options in the report). Also
+  fixed en route: flex's process-lifetime scanner buffer is now released by
+  the drivers (`lexer_release_scanner()`), so even the happy paths are
+  truly 0-in-use. Method: portable **allocation ledger**
+  (`make audit` — works on any machine with gcc; this box has no
+  valgrind/WSL). The valgrind target below stays authoritative for
+  write-tracing cross-checks on Linux boxes.
 - **Ayansh (collect_decls retirement — no Week-3 conflict):** audit DONE,
   agreed on both counts. The Week-3 symbol-table performance work (resize
   benchmarks, deeper hashing) is orthogonal to who inserts symbols — the

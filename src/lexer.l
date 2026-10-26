@@ -69,4 +69,18 @@ int g_lex_errors = 0;
 
 %%
 
-/* No trailing code needed; scanner is driven by yyparse(). */
+/* Explicit scanner teardown (Balraj, final QA): flex 2.5.4 keeps the input
+ * buffer (yy_buffer_state + its yy_ch_buf, ~16 KB) alive for the whole
+ * process by design. The allocation-ledger audit caught it, and a leak
+ * inside MY stage shouldn't be forgiven when one function releases it
+ * cleanly. Drivers call this right before return (see frontend_main.c /
+ * src/main.c). No observable behavior change — stdout/stderr/exit codes. */
+void lexer_release_scanner(void);
+
+void lexer_release_scanner(void) {
+    if (yy_current_buffer) {
+        yy_delete_buffer(yy_current_buffer);
+        yy_current_buffer = NULL;
+    }
+}
+

@@ -123,5 +123,8 @@ int main(void) {
           "uv_n vectors use canonical scale 1.0 too");
 
     printf("\n%d passed, %d failed\n", g_pass, g_fail);
+#ifdef ALLOC_AUDIT
+    audit_report();   /* allocation ledger: prove zero heap use explicitly */
+#endif
     return g_fail ? 1 : 0;
 }

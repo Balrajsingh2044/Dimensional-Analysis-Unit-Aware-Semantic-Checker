@@ -40,6 +40,7 @@ int main(void) {
     check(errs == 0, "velocity program accepted");
     sym = symtab_lookup(st, "speed");
     check(sym && sym->unit.dim[DIM_S] == -1, "speed unit = [m,s^-1]");
+    ast_free(prog); /* ledger audit caught this missing free — 8 nodes */
 
     /* distance/time must NOT add: distance + time */
     prog = ast_new_binary(OP_ADD,

@@ -23,6 +23,7 @@ extern FILE     *yyin;         /* set by driver; read by yylex */
 extern int       yyparse(void);
 extern AstNode  *g_program;    /* produced by parser.y */
 extern int       g_parse_errors;
+extern void      lexer_release_scanner(void);   /* flex scanner teardown */
 
 int main(int argc, char **argv) {
     FILE   *fp;
@@ -48,6 +49,7 @@ int main(int argc, char **argv) {
         ast_free(g_program);
         g_program = NULL;
         fclose(fp);
+        lexer_release_scanner();
         return EXIT_BUILD_ERROR;
     }
 
@@ -61,6 +63,7 @@ int main(int argc, char **argv) {
         ast_free(g_program);
         g_program = NULL;
         fclose(fp);
+        lexer_release_scanner();
         return EXIT_COMPILE_ERROR;
     }
 
@@ -70,5 +73,6 @@ int main(int argc, char **argv) {
     ast_free(g_program);
     g_program = NULL;
     fclose(fp);
+    lexer_release_scanner();        /* free flex's scanner buffer at exit */
     return cg == 0 ? EXIT_COMPILE_OK : EXIT_BUILD_ERROR;
 }

@@ -29,6 +29,7 @@ extern FILE  *yyin;        /* set by the driver; read by yylex */
 extern int    yyparse(void);
 extern AstNode *g_program;      /* produced by parser.y */
 extern int      g_parse_errors;
+extern void     lexer_release_scanner(void);  /* flex scanner teardown */
 
 /* ------------------------------------------------ declaration seeding */
 
@@ -120,6 +121,7 @@ int main(int argc, char **argv) {
     ast_free(g_program);
     g_program = NULL;
     fclose(fp);
+    lexer_release_scanner();        /* free flex's scanner buffer at exit */
     return exit_code;
 }
 #endif /* BUILD_CHECKER */
