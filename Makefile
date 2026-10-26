@@ -75,9 +75,13 @@ $(BIN)/lexer.yy.o: src/lexer.l $(BIN)/parser.tab.o | $(BIN)
 $(BIN)/frontend_main.o: src/frontend_main.c $(ST_HDRS) $(SEM_HDRS) | $(BIN)
 	$(CC) $(CFLAGS) -c $< -o $@
 
+# checker build: same skeleton WITH its own main() and debug dumps
+$(BIN)/frontend_checker.o: src/frontend_main.c $(ST_HDRS) $(SEM_HDRS) | $(BIN)
+	$(CC) $(CFLAGS) -DBUILD_CHECKER -c $< -o $@
+
 $(BIN)/dimc-checker: $(BIN)/lexer.yy.o $(BIN)/parser.tab.o $(BIN)/ast.o \
             $(BIN)/symtab.o $(BIN)/unitvec.o $(BIN)/semantic.o \
-            $(BIN)/semantic_ops.o $(BIN)/frontend_main.o
+            $(BIN)/semantic_ops.o $(BIN)/frontend_checker.o
 	$(CC) $(CFLAGS) -o $@ $^
 
 # final unified pipeline (Shreyansh's main.c + codegen.c + everything).

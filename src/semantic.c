@@ -155,8 +155,11 @@ static int check_stmt(AstNode *stmt, SymTab *st) {
                 char desc[64], vec[64];
                 uv_describe(u, desc, sizeof desc);
                 uv_str(u, vec, sizeof vec);
-                printf("declared: %-16s : %-20s %s\n",
-                       stmt->name, desc, vec);
+                /* stderr on purpose: the final ./dimc must emit PURE C on
+                 * stdout; the declared: lines are diagnostics/demo info
+                 * (integration fix, Week 4) */
+                fprintf(stderr, "declared: %-16s : %-20s %s\n",
+                        stmt->name, desc, vec);
             }
             break;
 

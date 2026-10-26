@@ -73,6 +73,10 @@ static void collect_decls(const AstNode *prog, SymTab *st) {
 
 /* ------------------------------------------------ main */
 
+/* Two drivers share this skeleton — BUILD_CHECKER selects which binary is
+ * the debug checker (with AST/symtab dumps + contract lines). The unified
+ * ./dimc defines its own quiet main() (src/main.c). */
+#if defined(BUILD_CHECKER)
 int main(int argc, char **argv) {
     FILE *fp;
     SymTab *st;
@@ -118,3 +122,4 @@ int main(int argc, char **argv) {
     fclose(fp);
     return exit_code;
 }
+#endif /* BUILD_CHECKER */
