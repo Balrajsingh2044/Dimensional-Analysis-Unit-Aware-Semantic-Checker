@@ -6,6 +6,7 @@
  */
 #include "semantic.h"
 #include <string.h>
+#include <math.h>
 
 static int g_checks = 0;
 static int g_fails  = 0;
@@ -159,8 +160,58 @@ int main(void) {
             ast_new_unit_lit(dim_strdup("seconds"), 1), 1), 1);
     errs = semantic_check(st, prog);
     check(errs == 0, "(3*meters + 2*meters) / seconds accepted");
+    sym = symtab_lookup(st, "speed");
+    check(sym && sym->scale == 1.0, "speed over SI carries scale 1.0");
     ast_free(prog);
 
+    symtab_destroy(st);
+
+    /* ------- 12. WEEK-3: metric vs imperial scale checks ------- */
+    st = symtab_create();
+
+    /* 5 * meters + 3 * feet: same Length vector, different scale => ERROR */
+    prog = ast_new_binary(OP_ADD,
+        ast_new_binary(OP_MUL, ast_new_num(5, 1), ast_new_unit_lit(dim_strdup("meters"), 1), 1),
+        ast_new_binary(OP_MUL, ast_new_num(3, 1), ast_new_unit_lit(dim_strdup("feet"), 1), 1),
+        1);
+    errs = semantic_check(st, prog);
+    check(errs == 1, "meters + feet rejected (scale mismatch, not vector mismatch)");
+    ast_free(prog);
+
+    /* km + meters: also scale mismatch (1000 vs 1) */
+    prog = ast_new_binary(OP_SUB,
+        ast_new_unit_lit(dim_strdup("km"), 1),
+        ast_new_unit_lit(dim_strdup("meters"), 1), 1);
+    errs = semantic_check(st, prog);
+    check(errs == 1, "km - meters rejected (scale mismatch)");
+    ast_free(prog);
+
+    /* hours vs seconds (inside an l-div t program): scale mismatch */
+    prog = ast_new_binary(OP_ADD,
+        ast_new_unit_lit(dim_strdup("hours"), 1),
+        ast_new_unit_lit(dim_strdup("seconds"), 1), 1);
+    errs = semantic_check(st, prog);
+    check(errs == 1, "hours + seconds rejected (scale mismatch)");
+    ast_free(prog);
+
+    /* feet / feet cancels to canonical ×1; free to add to a plain number */
+    prog = ast_new_binary(OP_ADD,
+        ast_new_binary(OP_DIV, ast_new_unit_lit(dim_strdup("feet"), 1),
+            ast_new_unit_lit(dim_strdup("feet"), 1), 1),
+        ast_new_num(7, 1), 1);
+    errs = semantic_check(st, prog);
+    check(errs == 0, "feet/feet == 7 accepted (cancellation normalizes scale)");
+    ast_free(prog);
+
+    /* symbols carry their scale: let d = 3 * feet -> scale 0.3048 */
+    prog = ast_new_let(dim_strdup("d"),
+        ast_new_binary(OP_MUL, ast_new_num(3, 1),
+            ast_new_unit_lit(dim_strdup("feet"), 1), 1), 1);
+    errs = semantic_check(st, prog);
+    check(errs == 0, "let d = 3 * feet accepted");
+    sym = symtab_lookup(st, "d");
+    check(sym && fabs(sym->scale - 0.3048) < 1e-9, "symbol d carries scale 0.3048");
+    ast_free(prog);
     symtab_destroy(st);
 
     printf("\n%d checks, %d failures\n", g_checks, g_fails);

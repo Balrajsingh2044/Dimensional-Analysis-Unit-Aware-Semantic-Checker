@@ -7,6 +7,7 @@
 #include "unitvec.h"
 #include <string.h>
 #include <ctype.h>
+#include <math.h>
 
 static const char *g_base_names[NUM_DIMENSIONS] = {
     "m", "kg", "s", "A", "K", "mol", "cd"
@@ -16,49 +17,62 @@ static const char *g_dim_names[NUM_DIMENSIONS] = {
     "Length", "Mass", "Time", "Current", "Temperature", "Amount", "Intensity"
 };
 
-/* accepted spellings in the .dim language (lexer may also map these) */
-typedef struct { const char *word; UnitDim dim; int exp; } UnitWord;
-
-static const UnitWord g_words[] = {
-    { "meters",      DIM_M,   1 },
-    { "meter",       DIM_M,   1 },
-    { "m",           DIM_M,   1 },
-    { "kilometers",  DIM_M,   1 },
-    { "feet",        DIM_M,   1 },
-    { "foot",        DIM_M,   1 },
-    { "ft",          DIM_M,   1 },
-    { "kg",         DIM_KG,   1 },
-    { "kilograms",   DIM_KG,  1 },
-    { "grams",       DIM_KG,  1 },
-    { "pounds",      DIM_KG,  1 },
-    { "lb",          DIM_KG,  1 },
-    { "seconds",     DIM_S,   1 },
-    { "second",      DIM_S,   1 },
-    { "s",           DIM_S,   1 },
-    { "hours",       DIM_S,   1 },
-    { "amperes",     DIM_A,   1 },
-    { "ampere",      DIM_A,   1 },
-    { "A",           DIM_A,   1 },
-    { "kelvin",      DIM_K,   1 },
-    { "K",           DIM_K,   1 },
-    { "moles",       DIM_MOL, 1 },
-    { "mole",        DIM_MOL, 1 },
-    { "mol",         DIM_MOL, 1 },
-    { "candela",     DIM_CD,  1 },
-    { "cd",          DIM_CD,  1 },
-    { 0, DIM_M, 0 }
-};
-
 /* ------------------------------------------------ constructors */
+
+/* accepted spellings in the .dim language (lexer may also map these) */
+typedef struct { const char *word; UnitDim dim; int exp; double scale; } UnitWord;
+
+/* scale = canonical SI factor of the word (Week-3 metric-vs-imperial):
+ * exponents capture the DIMENSION, scale captures the SIZE, so
+ * meters + feet can be rejected (both Length, 1 m != 0.3048 m).
+ * Composite words keep exp=1 and scale=1000 (km) etc. */
+static const UnitWord g_words[] = {
+    { "meters",      DIM_M,   1, 1.0       },
+    { "meter",       DIM_M,   1, 1.0       },
+    { "m",           DIM_M,   1, 1.0       },
+    { "kilometers",  DIM_M,   1, 1000.0    },
+    { "kilometer",   DIM_M,   1, 1000.0    },
+    { "km",          DIM_M,   1, 1000.0    },
+    { "feet",        DIM_M,   1, 0.3048    },
+    { "foot",        DIM_M,   1, 0.3048    },
+    { "ft",          DIM_M,   1, 0.3048    },
+    { "inches",      DIM_M,   1, 0.0254    },
+    { "inch",        DIM_M,   1, 0.0254    },
+    { "kg",         DIM_KG,   1, 1.0       },
+    { "kilograms",   DIM_KG,  1, 1.0       },
+    { "gram",        DIM_KG,  1, 0.001     },
+    { "grams",       DIM_KG,  1, 0.001     },
+    { "pounds",      DIM_KG,  1, 0.45359237},
+    { "lb",          DIM_KG,  1, 0.45359237},
+    { "seconds",     DIM_S,   1, 1.0       },
+    { "second",      DIM_S,   1, 1.0       },
+    { "s",           DIM_S,   1, 1.0       },
+    { "hours",       DIM_S,   1, 3600.0    },
+    { "hour",        DIM_S,   1, 3600.0    },
+    { "minutes",     DIM_S,   1, 60.0      },
+    { "minute",      DIM_S,   1, 60.0      },
+    { "amperes",     DIM_A,   1, 1.0       },
+    { "ampere",      DIM_A,   1, 1.0       },
+    { "A",           DIM_A,   1, 1.0       },
+    { "kelvin",      DIM_K,   1, 1.0       },
+    { "K",           DIM_K,   1, 1.0       },
+    { "moles",       DIM_MOL, 1, 1.0       },
+    { "mole",        DIM_MOL, 1, 1.0       },
+    { "mol",         DIM_MOL, 1, 1.0       },
+    { "candela",     DIM_CD,  1, 1.0       },
+    { "cd",          DIM_CD,  1, 1.0       },
+    { 0, DIM_M, 0, 1.0 }
+};
 
 UnitVec uv_dimensionless(void) {
     UnitVec v;
     memset(&v, 0, sizeof v);
+    v.scale = 1.0;          /* canonical 1-to-1 SI basis */
     return v;
 }
 
 UnitVec uv_n(int m, int kg, int s, int A, int K, int mol, int cd) {
-    UnitVec v;
+    UnitVec v = uv_dimensionless();
     v.dim[DIM_M]   = m;
     v.dim[DIM_KG]  = kg;
     v.dim[DIM_S]   = s;
@@ -75,7 +89,8 @@ UnitVec uv_from_name(const char *name) {
     for (i = 0; g_words[i].word; i++) {
         if (strcmp(g_words[i].word, name) == 0) {
             UnitVec v = uv_dimensionless();
-            v.dim[g_words[i].dim] = g_words[i].exp;
+            v.dim[g_words[i].dim]   = g_words[i].exp;
+            v.scale                 = g_words[i].scale;
             return v;
         }
     }
@@ -97,6 +112,7 @@ UnitVec uv_mul(UnitVec a, UnitVec b) {
     UnitVec r; int i;
     for (i = 0; i < NUM_DIMENSIONS; i++)
         r.dim[i] = a.dim[i] + b.dim[i];
+    r.scale = a.scale * b.scale;    /* factorists multiply */
     return r;
 }
 
@@ -104,6 +120,7 @@ UnitVec uv_div(UnitVec a, UnitVec b) {
     UnitVec r; int i;
     for (i = 0; i < NUM_DIMENSIONS; i++)
         r.dim[i] = a.dim[i] - b.dim[i];
+    r.scale = a.scale / b.scale;    /* feet/feet -> 1.0, km/m -> 1000.0 */
     return r;
 }
 
@@ -119,6 +136,10 @@ UnitVec uv_pow(UnitVec a, int exp) {
         for (i = 0; i < NUM_DIMENSIONS; i++)
             r.dim[i] = a.dim[i] * exp;
     }
+    r.scale = pow(a.scale, exp);    /* hours^2 -> 3600^2 (never 0: semantic
+                                     * rejects 0-exponent... and exp==0 case
+                                     * correctly lands on scale 1) */
+    if (neg) r.scale = 1.0 / r.scale;
     return r;
 }
 
@@ -133,6 +154,23 @@ int uv_equal(UnitVec a, UnitVec b) {
 
 int uv_is_dimensionless(UnitVec a) {
     return uv_equal(a, uv_dimensionless());
+}
+
+double uv_scale(UnitVec v) {
+    return v.scale;     /* 0 on uninitialized vectors is the caller's bug;
+                         * every constructor sets 1.0 or a word factor */
+}
+
+/* Relative-tolerance scale comparison: 1e-9 relative slack is deep below
+ * any real conversion factor (0.3048, 1000, 3600) yet above double noise
+ * from chains like km/h * hours / km. */
+#define SCALE_EPS 1e-9
+#define MY_MAX(a,b) ((a) > (b) ? (a) : (b))
+int scale_equal(UnitVec a, UnitVec b) {
+    double M = MY_MAX(fabs(a.scale), fabs(b.scale));
+    if (M == 0.0)                    /* both zero: degenerate, call it equal */
+        return 1;
+    return fabs(a.scale - b.scale) <= SCALE_EPS * MY_MAX(M, 1.0);
 }
 
 int uv_is_unitary(UnitVec a, UnitDim *out_dim) {

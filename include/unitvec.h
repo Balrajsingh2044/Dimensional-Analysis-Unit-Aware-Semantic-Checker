@@ -16,7 +16,11 @@
 #include "common.h"
 
 typedef struct {
-    int dim[NUM_DIMENSIONS]; /* exponent per SI base unit; may be negative */
+    int    dim[NUM_DIMENSIONS]; /* exponent per SI base unit; may be negative */
+    double scale;               /* canonical SI factor of the word this vector
+                                 * came from: meters=1, feet=0.3048, km=1000,
+                                 * hours=3600, ... WEEK-3 (metric vs imperial)
+                                 * — added by team agreement (design #6) */
 } UnitVec;
 
 /* ---- constructors ---- */
@@ -51,8 +55,18 @@ UnitVec uv_pow(UnitVec a, int exp);
 
 /* ---- predicates ---- */
 
-/* Element-wise exact equality — required for + and -. */
+/* Element-wise exact equality — required for + and - (together with
+ * scale_equal, so meters + feet is rejected even though both are Length). */
 int  uv_equal(UnitVec a, UnitVec b);
+
+/* Canonical-factor equality (relative tolerance) — + and - need BOTH this
+ * and uv_equal on the operands. meters vs feet share the vector but not
+ * the scale, so they must be rejected rather than silently converted. */
+int  scale_equal(UnitVec a, UnitVec b);
+
+/* The canonical factor stored in a vector (nn==1.0 for composite mid-air
+ * vectors not built from a unit word, e.g. uv_n / uv_dimensionless). */
+double uv_scale(UnitVec v);
 
 /* 1 if every exponent is 0 (a plain scalar / constant). */
 int  uv_is_dimensionless(UnitVec a);

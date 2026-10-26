@@ -16,12 +16,14 @@ static size_t hash_str(const char *s, size_t nbuckets) {
     return h & (nbuckets - 1);
 }
 
-static Symbol *symbol_new(const char *name, PrimType type, UnitVec unit, int line) {
+static Symbol *symbol_new(const char *name, PrimType type, UnitVec unit,
+                          int line, double scale) {
     Symbol *s = (Symbol *)calloc(1, sizeof *s);
     if (!s) return NULL;
     s->name = dim_strdup(name);
     s->type = type;
     s->unit = unit;
+    s->scale = scale;
     s->line = line;
     return s;
 }
@@ -84,13 +86,19 @@ Symbol *symtab_lookup(SymTab *st, const char *name) {
 
 Symbol *symtab_insert(SymTab *st, const char *name, PrimType type,
                       UnitVec unit, int line) {
+    /* legacy signature: canonical factor 1.0 (pure-SI vector) */
+    return symtab_insert_s(st, name, type, unit, line, 1.0);
+}
+
+Symbol *symtab_insert_s(SymTab *st, const char *name, PrimType type,
+                        UnitVec unit, int line, double scale) {
     size_t idx;
     Symbol *s;
     if (!st || !name) return NULL;
     if (symtab_lookup(st, name)) return NULL;    /* redeclaration */
     if ((st->count + 1) > st->nbuckets) resize(st);
 
-    s = symbol_new(name, type, unit, line);
+    s = symbol_new(name, type, unit, line, scale);
     if (!s) return NULL;
     idx = hash_str(name, st->nbuckets);
     s->next = st->buckets[idx];
@@ -103,6 +111,19 @@ int symtab_update_unit(SymTab *st, const char *name, UnitVec unit) {
     Symbol *s = symtab_lookup(st, name);
     if (!s) return -1;
     s->unit = unit;
+    /* keep the stored scale unless the new vector carries a fresh one —
+     * the analyzer's assign path calls symtab_update_unit_s() when it wants
+     * the scale re-pointed too */
+    if (unit.scale > 0.0) s->scale = unit.scale;
+    return 0;
+}
+
+int symtab_update_unit_s(SymTab *st, const char *name, UnitVec unit,
+                         double scale) {
+    Symbol *s = symtab_lookup(st, name);
+    if (!s) return -1;
+    s->unit = unit;
+    s->scale = scale;
     return 0;
 }
 

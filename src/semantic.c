@@ -27,10 +27,13 @@
 /* diagnostics emitters from semantic_ops.c */
 void sem_err_add_sub(const AstNode *n, const AstNode *lhs, const AstNode *rhs,
                      UnitVec lu, UnitVec ru);
+void sem_err_add_sub_scale(const AstNode *n, UnitVec lu, UnitVec ru);
 void sem_err_var(const AstNode *n);
 void sem_err_redecl(const AstNode *n, const Symbol *old);
 void sem_err_assign_unit_change(const AstNode *n, const Symbol *old,
                                 UnitVec new_u);
+void sem_err_assign_scale_change(const AstNode *n, const Symbol *old,
+                                 UnitVec new_u);
 PrimType sem_node_type(const AstNode *n);
 
 /* ------------------------------------------------ expression folding ---- */
@@ -76,15 +79,19 @@ static UnitVec fold_expr(AstNode *n, SymTab *st, int *errs) {
                 case OP_SUB:
                     if (!uv_equal(lu, ru))
                         { sem_err_add_sub(n, n->lhs, n->rhs, lu, ru); (*errs)++; }
+                    else if (!scale_equal(lu, ru))
+                        /* WEEK-3 (metric vs imperial): same dimension, but
+                         * mismatched canonical size — 5 * meters + 3 * feet */
+                        { sem_err_add_sub_scale(n, lu, ru); (*errs)++; }
                     result = lu;          /* on error, pick one to continue */
                     break;
 
                 case OP_MUL:
-                    result = uv_mul(lu, ru);
+                    result = uv_mul(lu, ru);    /* scales multiply too */
                     break;
 
                 case OP_DIV:
-                    result = uv_div(lu, ru);   /* m/m -> Scalar, free */
+                    result = uv_div(lu, ru);    /* m/m -> Scalar, scales divide */
                     break;
 
                 case OP_POW: {
@@ -126,6 +133,7 @@ static UnitVec fold_expr(AstNode *n, SymTab *st, int *errs) {
 
     n->unit       = result;
     n->unit_known = 1;
+    n->scale      = result.scale;   /* Week-3: node keeps its canonical factor */
     n->prim       = sem_node_type(n);
     return result;
 }
@@ -148,8 +156,8 @@ static int check_stmt(AstNode *stmt, SymTab *st) {
             if (sym) {
                 sem_err_redecl(stmt, sym);
                 errs++;
-            } else if (!symtab_insert(st, stmt->name, TYPE_DOUBLE, u,
-                                      stmt->line)) {
+            } else if (!symtab_insert_s(st, stmt->name, TYPE_DOUBLE, u,
+                                        stmt->line, u.scale)) {
                 errs++;
             } else {
                 char desc[64], vec[64];
@@ -175,7 +183,9 @@ static int check_stmt(AstNode *stmt, SymTab *st) {
             } else {
                 if (!uv_equal(sym->unit, u))
                     sem_err_assign_unit_change(stmt, sym, u);
-                symtab_update_unit(st, stmt->name, u);
+                else if (!scale_equal(sym->unit, u))
+                    sem_err_assign_scale_change(stmt, sym, u);
+                symtab_update_unit_s(st, stmt->name, u, u.scale);
             }
             break;
 

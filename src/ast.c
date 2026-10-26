@@ -18,6 +18,7 @@ static AstNode *ast_new(AstKind kind, int line) {
     n->op   = OP_NONE;
     n->unit = uv_dimensionless();
     n->unit_known = 0;      /* analyzer flips this to 1 */
+    n->scale = 1.0;         /* Week-3 canonical factor (synced by analyzer) */
     n->prim = TYPE_UNKNOWN;
     return n;
 }

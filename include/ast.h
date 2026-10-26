@@ -43,6 +43,10 @@ typedef struct AstNode {
 
     UnitVec        unit;        /* folded unit vector; valid only while        */
     int            unit_known;  /* unit_known == 1                             */
+    double         scale;       /* canonical SI factor carried by the folded
+                                 * unit (Week-3 metric-vs-imperial); default
+                                 * 1.0; analyzer keeps it in sync with
+                                 * node->unit.scale                            */
 
     struct AstNode *lhs, *rhs;  /* children (NULL when not applicable)         */
     struct AstNode *next;       /* statement list link                         */

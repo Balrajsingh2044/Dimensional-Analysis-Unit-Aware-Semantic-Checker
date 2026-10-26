@@ -32,6 +32,8 @@ typedef struct Symbol {
     char     *name;
     PrimType  type;
     UnitVec   unit;
+    double    scale;           /* canonical SI factor, default 1.0 (Week-3
+                               * metric-vs-imperial: stored alongside unit) */
     int       line;            /* declaration line, for diagnostics */
     struct Symbol *next;       /* collision chain (separate chaining) */
 } Symbol;
@@ -57,8 +59,17 @@ Symbol *symtab_lookup(SymTab *st, const char *name);
 Symbol *symtab_insert(SymTab *st, const char *name, PrimType type,
                       UnitVec unit, int line);
 
+/* Same, but also stores the canonical scale (Week-3 scale field, team-agreed;
+ * e.g. a speed in m/h carries scale 3600). scale must be finite and > 0. */
+Symbol *symtab_insert_s(SymTab *st, const char *name, PrimType type,
+                        UnitVec unit, int line, double scale);
+
 /* Re-point an existing symbol's unit (e.g. new assignment to same name). */
 int     symtab_update_unit(SymTab *st, const char *name, UnitVec unit);
+
+/* Same, but also re-points the canonical scale (analyzer's assign path). */
+int     symtab_update_unit_s(SymTab *st, const char *name, UnitVec unit,
+                             double scale);
 
 /* ---- introspection (spreadsheet in the README lives on these) ---- */
 void    symtab_print(SymTab *st, FILE *out);   /* debug dump */

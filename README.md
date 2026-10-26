@@ -148,9 +148,9 @@ gcc -Wall -Wextra -g -O0 -std=c11 -Iinclude -o output\vec_test.exe src\vec_test.
 gcc -Wall -Wextra -g -O0 -std=c11 -Iinclude -o output\symtab_test.exe src\symtab_test.c output\symtab.o output\unitvec.o
 gcc -Wall -Wextra -g -O0 -std=c11 -Iinclude -o output\semantic_test.exe src\semantic_test.c output\semantic.o output\semantic_ops.o output\symtab.o output\unitvec.o output\ast.o
 
-output\vec_test.exe          REM 20 checks
-output\symtab_test.exe       REM 12 checks
-output\semantic_test.exe     REM 15 checks (semantic analyzer)
+output\vec_test.exe          REM 33 checks
+output\symtab_test.exe       REM 16 checks
+output\semantic_test.exe     REM 22 checks (semantic analyzer)
 output\dimc-checker.exe YOUR_FILE.dim
 output\dimc.exe YOUR_FILE.dim [out.c]
 ```
@@ -170,6 +170,13 @@ let neg      = -3 * meters;            // unary minus (desugared to -1 * x)
 - `let` declares, plain `name = ...` assigns (must already exist).
 - Unit literals (`meters`, `kg`, `seconds`, `K`, `A`, `cd`, `mol`, plus
   `feet`, `hours`, ...) are **first-class tokens**.
+- **Canonical scale (Week-3):** every unit word carries its SI factor from
+  `unitvec.c`'s word table — SI atoms ×1; `feet/foot/ft` ×0.3048,
+  `inches` ×0.0254, `kilometers/km` ×1000, `grams` ×0.001,
+  `pounds/lb` ×0.45359237, `minutes` ×60, `hours` ×3600. `*`/`/`/`^`
+  propagate scales (multiply / divide / raise). `+`/`-` require BOTH
+  identical dimensions AND equal scale — so `5 * meters + 3 * feet` is an
+  ERROR even though both are Length.
 - Single-letter aliases `m`, `s`, `kg`, ... are reserved as units — don't use
   them as variable names.
 - Numbers: integer, decimal, and scientific notation (`1.5e-3`).
@@ -215,14 +222,23 @@ let neg      = -3 * meters;            // unary minus (desugared to -1 * x)
   keep the stream discipline: **pure C on stdout, diagnostics on stderr**,
   and read the units from the AST (`node->unit`, `node->prim` — codegen
   does not touch the SymTab).
-- **Shreyansh:** new `semantic_test.exe` (15 checks) is part of
+- **Shreyansh:** new `semantic_test.exe` (22 checks) is part of
   `make test`; add it to `tests/run_tests.sh`.
-- **Shreyansh (metric-vs-imperial, Phase 3 leftover):** `meters` and
-  `feet` both fold to Length, so `5 * meters + 3 * feet` currently PASSES.
-  Catching that needs a conversion-scale field (e.g. `double scale;` on
-  AST units + symtab) — that is a team-contract change to `include/ast.h`/
-  `include/symtab.h`; we agreed to schedule it as Week 3 work. Flags are
-  already set: `uv_is_unitary()` marks base-scale-compatible vectors.
+- **All (metric-vs-imperial — RESOLVED, Week-3 scale field landed):**
+  `double scale` now lives on `UnitVec` (unitvec.h), `AstNode`
+  (include/ast.h) and `Symbol` (include/symtab.h); unit words carry their
+  canonical SI factors from `unitvec.c`'s single word table (meters=1,
+  km=1000, feet=0.3048, inches=0.0254, grams=0.001, pounds=0.45359237,
+  minutes=60, hours=3600; SI atoms = 1). `+`/`-` now require
+  `uv_equal() && scale_equal()`, so `5 * meters + 3 * feet` is a HARD
+  ERROR ("same dimension but different unit size — metric vs imperial?"),
+  `tests/invalid/04_metric_imperial.dim` is a caught error case (no skip),
+  and scale algebra propagates exactly like exponents: mul→multiply,
+  div→divide, pow→raise (so `5 * kilometers / meters` even folds to the
+  correct SI value 5000 in generated C). Contract-side API additions:
+  `scale_equal()`, `uv_scale()`, `symtab_insert_s()`,
+  `symtab_update_unit_s()`; legacy `symtab_insert()`/`symtab_update_unit()`
+  unchanged for all existing callers.
 - **All:** parse errors exit with code 3 (`EXIT_BUILD_ERROR`), semantic
   errors use 1 (`EXIT_COMPILE_ERROR`) per `include/common.h`. Semantic
   errors do NOT stop the pass — one run reports every violation in a file.

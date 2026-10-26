@@ -7,9 +7,16 @@
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
+#include <math.h>
 #include "unitvec.h"
 
 static int g_pass = 0, g_fail = 0;
+
+/* x87 excess-precision-safe double compare (32-bit MinGW keeps doubles in
+ * 80-bit registers, so bit-exact == against a literal 0.3048 can fail) */
+static int sc_near(double a, double b) {
+    return fabs(a - b) < 1e-9;
+}
 
 static void check_impl(int cond, const char *what) {
     if (cond) { g_pass++; printf("  ok  %s\n", what); }
@@ -88,6 +95,32 @@ int main(void) {
     puts("[8] unknown unit fallback");
     UnitVec bogus = uv_from_name("furlongs");
     CHECK(uv_is_dimensionless(bogus), "unknown unit falls back to dimensionless with warning");
+
+    puts("[9] canonical scale factors (Week-3 metric vs imperial)");
+    CHECK(sc_near(uv_scale(meters), 1.0), "meters scale == 1.0");
+    CHECK(sc_near(uv_scale(uv_from_name("feet")), 0.3048), "feet scale == 0.3048");
+    CHECK(sc_near(uv_scale(uv_from_name("km")), 1000.0), "km scale == 1000.0");
+    CHECK(sc_near(uv_scale(uv_from_name("hours")), 3600.0), "hours scale == 3600.0");
+    CHECK(sc_near(uv_scale(uv_from_name("pounds")), 0.45359237), "pounds scale == 0.45359237");
+    CHECK(uv_equal(meters, uv_from_name("feet")) &&
+          !scale_equal(meters, uv_from_name("feet")),
+          "meters vs feet: same vector, DIFFERENT scale");
+    CHECK(scale_equal(meters, uv_from_name("meters")), "scale_equal(m,m)");
+    UnitVec feet = uv_from_name("feet");
+    UnitVec feet_m = uv_mul(feet, meters);
+    CHECK(sc_near(uv_scale(feet_m), 0.3048), "feet * meters scales multiply");
+    UnitVec feet_per_m = uv_div(feet, meters);
+    CHECK(uv_is_dimensionless(feet_per_m) && sc_near(uv_scale(feet_per_m), 0.3048),
+          "feet / meters: dimensionless with scale 0.3048");
+    UnitVec feet_sq = uv_pow(feet, 2);
+    CHECK(sc_near(uv_scale(feet_sq), 0.3048 * 0.3048), "feet^2 scale == 0.3048^2");
+    UnitVec per_hour = uv_pow(uv_from_name("hours"), -1);
+    CHECK(sc_near(uv_scale(per_hour), 1.0 / 3600.0) && per_hour.dim[DIM_S] == -1,
+          "hours^-1: scale divides");
+    CHECK(scale_equal(uv_dimensionless(), uv_div(meters, uv_from_name("m"))),
+          "m/m cancel returns canonical scale 1");
+    CHECK(scale_equal(uv_n(1,0,0,0,0,0,0), meters),
+          "uv_n vectors use canonical scale 1.0 too");
 
     printf("\n%d passed, %d failed\n", g_pass, g_fail);
     return g_fail ? 1 : 0;

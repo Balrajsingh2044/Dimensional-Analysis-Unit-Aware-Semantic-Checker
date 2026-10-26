@@ -6,6 +6,9 @@
  * expression node, and enforces the dimensional rules:
  *
  *   + / -        operand vectors must be IDENTICAL (meters + seconds => error)
+ *                AND carry the same canonical scale (meters + feet => error:
+ *                both are Length, but 1 m != 0.3048 m — mixing metric with
+ *                imperial is rejected, WEEK-3 scale field, team-agreed)
  *   * / /        element-wise exponent add / subtract (m/s is fine, m/m cancels)
  *   ^            base may be dimensional, exponent must be a plain number
  *   let x = ...  declares x with the folded rhs unit (redeclaration error)

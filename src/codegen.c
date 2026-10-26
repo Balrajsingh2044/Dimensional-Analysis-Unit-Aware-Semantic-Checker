@@ -44,8 +44,9 @@ static int prec_of(const AstNode *n) {
     }
 }
 
-/* Whole-subtree constant?  Unit literals act as magnitude 1 (their units
- * stay compile-time-only, so 5 * meters == 5 and m/s == 1). */
+/* Whole-subtree constant?  Unit literals act as their canonical SI factor
+ * (1 meters = 1 meter, 3 * feet = 0.9144 m worth of value) — their
+ * dimension stays compile-time-only info. */
 static int expr_const(const AstNode *n, double *out) {
     double lv, rv;
     int lc, rc;
@@ -53,7 +54,10 @@ static int expr_const(const AstNode *n, double *out) {
     if (!n) return 0;
     switch (n->kind) {
         case AST_NUM:      *out = n->num; return 1;
-        case AST_UNIT_LIT: *out = 1.0;     return 1;
+        case AST_UNIT_LIT: /* canonical SI factor of the word: km/m folds to
+                            * 1000, feet/meters to 0.3048 (Week-3 scale) */
+            *out = uv_scale(uv_from_name(n->unit_name));
+            return 1;
         case AST_BINARY:
             if (!n->lhs || !n->rhs) return 0;
             lc = expr_const(n->lhs, &lv);
@@ -160,10 +164,12 @@ static void emit_expr(FILE *o, const AstNode *n, int parent_prec, int is_right) 
     }
 }
 
-/* declaration type: int only for dimensionless integer-valued constants */
+/* declaration type: int only for canonical (×1) dimensionless integer-valued
+ * constants; a non-SI-scale dimensionless expr (km/m -> ×1000) stays double */
 static const char *stmt_type(const AstNode *rhs) {
     double v;
     if (rhs && rhs->unit_known && uv_is_dimensionless(rhs->unit)
+        && scale_equal(rhs->unit, uv_dimensionless())
         && expr_const(rhs, &v)
         && v == floor(v) && fabs(v) < 2.0e15)
         return "int";

@@ -1,5 +1,6 @@
 CC       = gcc
 CFLAGS   = -Wall -Wextra -g -O0 -std=c11 -Iinclude -I$(BIN)
+LDLIBS   = -lm   # pow() in unitvec.c/codegen.c; MinGW ships a harmless stub
 FLEX     = flex
 BISON    = bison
 VALGRIND = valgrind --leak-check=full --error-exitcode=9
@@ -28,7 +29,7 @@ $(BIN)/unitvec.o: src/unitvec.c $(CORE_HDRS) | $(BIN)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 $(BIN)/vec_test: src/vec_test.c $(BIN)/unitvec.o
-	$(CC) $(CFLAGS) $^ -o $@
+	$(CC) $(CFLAGS) $^ -o $@ $(LDLIBS)
 
 vec_test: $(BIN)/vec_test
 	./$(BIN)/vec_test
@@ -44,7 +45,7 @@ $(BIN)/semantic_ops.o: src/semantic_ops.c $(SEM_HDRS) | $(BIN)
 $(BIN)/semantic_test: src/semantic_test.c $(BIN)/semantic.o \
                       $(BIN)/semantic_ops.o $(BIN)/symtab.o $(BIN)/unitvec.o \
                       $(BIN)/ast.o
-	$(CC) $(CFLAGS) $^ -o $@
+	$(CC) $(CFLAGS) $^ -o $@ $(LDLIBS)
 
 semantic_test: $(BIN)/semantic_test
 	./$(BIN)/semantic_test
@@ -54,7 +55,7 @@ $(BIN)/symtab.o: src/symtab.c $(ST_HDRS) | $(BIN)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 $(BIN)/symtab_test: src/symtab_test.c $(BIN)/symtab.o $(BIN)/unitvec.o
-	$(CC) $(CFLAGS) $^ -o $@
+	$(CC) $(CFLAGS) $^ -o $@ $(LDLIBS)
 
 symtab_test: $(BIN)/symtab_test
 	./$(BIN)/symtab_test
@@ -82,7 +83,7 @@ $(BIN)/frontend_checker.o: src/frontend_main.c $(ST_HDRS) $(SEM_HDRS) | $(BIN)
 $(BIN)/dimc-checker: $(BIN)/lexer.yy.o $(BIN)/parser.tab.o $(BIN)/ast.o \
             $(BIN)/symtab.o $(BIN)/unitvec.o $(BIN)/semantic.o \
             $(BIN)/semantic_ops.o $(BIN)/frontend_checker.o
-	$(CC) $(CFLAGS) -o $@ $^
+	$(CC) $(CFLAGS) -o $@ $^ $(LDLIBS)
 
 # final unified pipeline (Shreyansh's main.c + codegen.c + everything).
 # Building this before src/main.c exists fails with the missing-file error —
@@ -98,7 +99,7 @@ $(BIN)/dimc: $(BIN)/lexer.yy.o $(BIN)/parser.tab.o $(BIN)/ast.o \
             $(BIN)/symtab.o $(BIN)/unitvec.o $(BIN)/semantic.o \
             $(BIN)/semantic_ops.o $(BIN)/frontend_main.o \
             $(BIN)/codegen.o $(BIN)/main.o
-	$(CC) $(CFLAGS) -o $@ $^
+	$(CC) $(CFLAGS) -o $@ $^ $(LDLIBS)
 
 # Phase-3 checker (parse + AST + analyzer), no codegen yet. old alias kept:
 checker: $(BIN)/dimc-checker

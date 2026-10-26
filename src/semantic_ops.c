@@ -76,6 +76,20 @@ void sem_err_add_sub(const AstNode *n, const AstNode *lhs, const AstNode *rhs,
     DIM_NOTE("line %d: while checking '%s'", n->line, ex);
 }
 
+/* Week-3 (metric vs imperial): same dim vector, different canonical size. */
+void sem_err_add_sub_scale(const AstNode *n, UnitVec lu, UnitVec ru) {
+    char ld[64], lv[64], ex[160];
+    uv_describe(lu, ld, sizeof ld);
+    uv_str(lu, lv, sizeof lv);
+    semantic_expr_str(n, ex, sizeof ex);
+
+    DIM_ERR("Cannot add %s %s across scales: %g (SI) vs %g (SI)",
+            ld, lv, uv_scale(lu), uv_scale(ru));
+    DIM_NOTE("line %d: while checking '%s'; same dimension but different "
+             "unit size (metric vs imperial?) — convert explicitly first",
+             n->line, ex);
+}
+
 void sem_err_var(const AstNode *n) {
     char ex[160];
     semantic_expr_str(n, ex, sizeof ex);
@@ -101,6 +115,18 @@ void sem_err_assign_unit_change(const AstNode *n, const Symbol *old,
     semantic_expr_str(n->rhs, ex, sizeof ex);
     DIM_WARN("line %d: '%s' changes dimension from %s to %s",
              n->line, n->name ? n->name : "?", od, nd);
+    DIM_NOTE("while checking '%s = %s'", n->name ? n->name : "?", ex);
+}
+
+void sem_err_assign_scale_change(const AstNode *n, const Symbol *old,
+                                 UnitVec new_u) {
+    char dd[64], ex[160];
+    uv_describe(old->unit, dd, sizeof dd);
+    semantic_expr_str(n->rhs, ex, sizeof ex);
+    DIM_WARN("line %d: '%s' keeps dimension %s but changes scale from "
+             "%g (SI) to %g (SI)",
+             n->line, n->name ? n->name : "?", dd,
+             uv_scale(old->unit), uv_scale(new_u));
     DIM_NOTE("while checking '%s = %s'", n->name ? n->name : "?", ex);
 }
 

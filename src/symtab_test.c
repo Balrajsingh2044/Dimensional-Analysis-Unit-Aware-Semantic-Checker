@@ -5,6 +5,7 @@
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
+#include <math.h>
 #include "symtab.h"
 
 static int g_pass = 0, g_fail = 0;
@@ -50,6 +51,19 @@ int main(void) {
     snprintf(name, sizeof name, "var_%d", 417);
     CHECK(symtab_lookup(st, name) != NULL, "lookup after resize works");
     CHECK(symtab_count(st) == 501, "count == 501");
+
+    puts("[6] canonical-scale API (Week-3 metric vs imperial)");
+    s = symtab_insert_s(st, "speed_h", TYPE_DOUBLE, uv_from_name("meters"),
+                        11, 3600.0);        /* meters/hour */
+    CHECK(s != NULL && s->scale == 3600.0, "insert_s stores the scale");
+    CHECK(symtab_insert(st, "speed_kmh", TYPE_DOUBLE, uv_from_name("seconds"), 12) != NULL &&
+          symtab_lookup(st, "speed_kmh")->scale == 1.0,
+          "plain insert defaults scale to 1.0");
+    CHECK(symtab_update_unit_s(st, "speed_h", uv_from_name("feet"), 0.3048) == 0 &&
+          fabs(symtab_lookup(st, "speed_h")->scale - 0.3048) < 1e-9,
+          "update_unit_s re-points the scale");
+    CHECK(symtab_update_unit_s(st, "spam", uv_from_name("feet"), 0.3048) != 0,
+          "update_unit_s on unknown symbol fails cleanly");
 
     symtab_print(st == NULL ? NULL : st, stdout);  /* just proves it doesn't crash */
     symtab_destroy(st);
