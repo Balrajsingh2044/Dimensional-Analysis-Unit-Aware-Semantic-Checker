@@ -122,6 +122,17 @@ int main(void) {
     CHECK(scale_equal(uv_n(1,0,0,0,0,0,0), meters),
           "uv_n vectors use canonical scale 1.0 too");
 
+    puts("[10] derived units (Mars Climate Orbiter support)");
+    UnitVec newton = uv_from_name("newtons");
+    CHECK(uv_equal(newton, uv_n(1,1,-2,0,0,0,0)) && sc_near(uv_scale(newton), 1.0),
+          "newtons == kg*m/s^2, scale 1");
+    CHECK(uv_is_unit_word("N") && uv_is_unit_word("lbf") && uv_is_unit_word("pounds_force"),
+          "N / lbf / pounds_force are unit words");
+    UnitVec lbf = uv_from_name("lbf");
+    CHECK(uv_equal(lbf, newton) && !scale_equal(lbf, newton) &&
+          sc_near(uv_scale(lbf), 4.4482216152605),
+          "lbf == same vector, scale 4.4482216152605 (the MCO mismatch)");
+
     printf("\n%d passed, %d failed\n", g_pass, g_fail);
 #ifdef ALLOC_AUDIT
     audit_report();   /* allocation ledger: prove zero heap use explicitly */

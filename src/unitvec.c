@@ -64,6 +64,25 @@ static const UnitWord g_words[] = {
     { 0, DIM_M, 0, 1.0 }
 };
 
+/* Derived (multi-dimension) units: one word maps to a full UnitVec, which a
+ * {dim, exp, scale} triple can't express. Checked FIRST in uv_from_name /
+ * uv_is_unit_word. Forward-declared (address-of-static is an integer
+ * constant expression, so table-before-definition is legal C).
+ * lbf (pounds-force) = 4.4482216152605 N exactly (standard relation). */
+static const UnitVec g_newton, g_lbf_force;
+static const struct { const char *word; const UnitVec *v; } g_derived[] = {
+    { "newtons",      &g_newton    },
+    { "newton",       &g_newton    },
+    { "N",            &g_newton    },
+    { "pounds_force", &g_lbf_force },
+    { "pound_force",  &g_lbf_force },
+    { "lbf",          &g_lbf_force },
+    { 0, 0 }
+};
+static const UnitVec g_newton    = { { 1, 1, -2, 0, 0, 0, 0 }, 1.0 };
+static const UnitVec g_lbf_force = { { 1, 1, -2, 0, 0, 0, 0 },
+                                     4.4482216152605 };
+
 UnitVec uv_dimensionless(void) {
     UnitVec v;
     memset(&v, 0, sizeof v);
@@ -86,6 +105,10 @@ UnitVec uv_n(int m, int kg, int s, int A, int K, int mol, int cd) {
 UnitVec uv_from_name(const char *name) {
     int i;
     if (!name) return uv_dimensionless();
+    /* derived multi-dimension words first (newtons, lbf, ...) */
+    for (i = 0; g_derived[i].word; i++)
+        if (strcmp(g_derived[i].word, name) == 0)
+            return *g_derived[i].v;
     for (i = 0; g_words[i].word; i++) {
         if (strcmp(g_words[i].word, name) == 0) {
             UnitVec v = uv_dimensionless();
@@ -101,6 +124,8 @@ UnitVec uv_from_name(const char *name) {
 int uv_is_unit_word(const char *word) {
     int i;
     if (!word) return 0;
+    for (i = 0; g_derived[i].word; i++)
+        if (strcmp(g_derived[i].word, word) == 0) return 1;
     for (i = 0; g_words[i].word; i++)
         if (strcmp(g_words[i].word, word) == 0) return 1;
     return 0;
