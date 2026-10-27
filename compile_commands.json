@@ -1,0 +1,16 @@
+[
+  { "directory": "G:/CD", "file": "src/ast.c",          "arguments": ["gcc", "-Wall", "-Wextra", "-g", "-O0", "-std=c11", "-Iinclude", "-Ioutput", "-c", "src/ast.c", "-o", "output/ast.o"] },
+  { "directory": "G:/CD", "file": "src/symtab.c",       "arguments": ["gcc", "-Wall", "-Wextra", "-g", "-O0", "-std=c11", "-Iinclude", "-Ioutput", "-c", "src/symtab.c", "-o", "output/symtab.o"] },
+  { "directory": "G:/CD", "file": "src/unitvec.c",      "arguments": ["gcc", "-Wall", "-Wextra", "-g", "-O0", "-std=c11", "-Iinclude", "-Ioutput", "-c", "src/unitvec.c", "-o", "output/unitvec.o"] },
+  { "directory": "G:/CD", "file": "src/semantic.c",     "arguments": ["gcc", "-Wall", "-Wextra", "-g", "-O0", "-std=c11", "-Iinclude", "-Ioutput", "-c", "src/semantic.c", "-o", "output/semantic.o"] },
+  { "directory": "G:/CD", "file": "src/semantic_ops.c", "arguments": ["gcc", "-Wall", "-Wextra", "-g", "-O0", "-std=c11", "-Iinclude", "-Ioutput", "-c", "src/semantic_ops.c", "-o", "output/semantic_ops.o"] },
+  { "directory": "G:/CD", "file": "src/evaluator.c",    "arguments": ["gcc", "-Wall", "-Wextra", "-g", "-O0", "-std=c11", "-Iinclude", "-Ioutput", "-c", "src/evaluator.c", "-o", "output/evaluator.o"] },
+  { "directory": "G:/CD", "file": "src/codegen.c",      "arguments": ["gcc", "-Wall", "-Wextra", "-g", "-O0", "-std=c11", "-Iinclude", "-Ioutput", "-c", "src/codegen.c", "-o", "output/codegen.o"] },
+  { "directory": "G:/CD", "file": "src/frontend_main.c","arguments": ["gcc", "-Wall", "-Wextra", "-g", "-O0", "-std=c11", "-Iinclude", "-Ioutput", "-c", "src/frontend_main.c", "-o", "output/frontend_main.o"] },
+  { "directory": "G:/CD", "file": "src/main.c",         "arguments": ["gcc", "-Wall", "-Wextra", "-g", "-O0", "-std=c11", "-Iinclude", "-Ioutput", "-c", "src/main.c", "-o", "output/main.o"] },
+  { "directory": "G:/CD", "file": "src/vec_test.c",     "arguments": ["gcc", "-Wall", "-Wextra", "-g", "-O0", "-std=c11", "-Iinclude", "-Ioutput", "-c", "src/vec_test.c", "-o", "output/vec_test.o"] },
+  { "directory": "G:/CD", "file": "src/symtab_test.c",  "arguments": ["gcc", "-Wall", "-Wextra", "-g", "-O0", "-std=c11", "-Iinclude", "-Ioutput", "-c", "src/symtab_test.c", "-o", "output/symtab_test.o"] },
+  { "directory": "G:/CD", "file": "src/semantic_test.c","arguments": ["gcc", "-Wall", "-Wextra", "-g", "-O0", "-std=c11", "-Iinclude", "-Ioutput", "-c", "src/semantic_test.c", "-o", "output/semantic_test.o"] },
+  { "directory": "G:/CD", "file": "output/parser.tab.c","arguments": ["gcc", "-Wall", "-Wextra", "-g", "-O0", "-std=c11", "-Iinclude", "-Ioutput", "-c", "output/parser.tab.c", "-o", "output/parser.tab.o"] },
+  { "directory": "G:/CD", "file": "output/lexer.yy.c",  "arguments": ["gcc", "-Wall", "-Wextra", "-g", "-O0", "-std=c11", "-Iinclude", "-Ioutput", "-c", "output/lexer.yy.c", "-o", "output/lexer.yy.o"] }
+]
