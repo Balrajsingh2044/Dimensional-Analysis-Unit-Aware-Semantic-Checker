@@ -57,7 +57,10 @@ inking the two binaries per the objects listed below). Historical note:
 this repository used old bison 2.4.1 — **never re-add a `%destructor` on
 `<node>`**, it corrupts values already consumed by grammar actions
 (token destructors are fine). If bison ever complains about "missing
-c-skel"/m4 data: `set BISON_PKGDATADIR=C:\PROGRA~2\GnuWin32\share\bison`.
+c-skel"/m4 data, point `BISON_PKGDATADIR` at *your* GnuWin32 `share\bison`
+directory — the location depends on where GnuWin32 was installed, e.g.
+`set BISON_PKGDATADIR=C:\GnuWin32\share\bison` (this machine) or
+`set BISON_PKGDATADIR=C:\PROGRA~2\GnuWin32\share\bison`.
 
 ## The `.dim` language
 
