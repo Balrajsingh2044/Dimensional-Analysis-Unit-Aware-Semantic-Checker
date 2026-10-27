@@ -1,0 +1,4 @@
+# Streamlit theme — dimc compiler UI, native dark theme
+[theme]
+base = "dark"
+primaryColor = "#7fb4ff"

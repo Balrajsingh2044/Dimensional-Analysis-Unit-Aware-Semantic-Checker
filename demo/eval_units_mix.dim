@@ -1,0 +1,8 @@
+// Week-5 interpreter demo: dimensionless cancellation + different units.
+let track  = 5 * kilometers / meters;   // scales fold: 5000 (Scalar)
+let speed  = 30 * kilometers / hours;   // 8.33333 S (m/s)
+let force  = 2 * kg * meters / (seconds ^ 2);   // 2 N
+let accel  = force / (2 * kg);          // N/kg cancels to 1 S/S^2
+track;
+speed;
+accel;

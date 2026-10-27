@@ -50,6 +50,10 @@ typedef struct AstNode {
 
     struct AstNode *lhs, *rhs;  /* children (NULL when not applicable)         */
     struct AstNode *next;       /* statement list link                         */
+
+    /* Week-5 eval pass: computed numeric value of this node (canonical SI).
+     * Only meaningful after evaluator.c has walked it; zero-initialized. */
+    double         value;
 } AstNode;
 
 /* ---- constructors (Balraj calls these from parser.y) --------

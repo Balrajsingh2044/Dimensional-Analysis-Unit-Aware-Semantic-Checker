@@ -6,12 +6,17 @@
  *   dimc -p FILE.dim [out.c]        (Week-4 additive: also print the most
  *                                    recently assigned variable — the
  *                                    "compiler hands you the answer" flag)
+ *   dimc -r FILE.dim                (Week-5 additive: interpreter mode —
+ *                                    evaluate the math at compile time and
+ *                                    print "Result: ... (unit)" on stdout)
+ *   dimc --run FILE.dim             (same as -r)
  *
  *   1. lex + parse                  → exit 3 on parse error (stderr only)
  *   2. semantic_check(fresh SymTab) → exit 1 on any unit violation
- *   3. codegen_emit(): prints unit-stripped C to stdout (or out.c with a
- *      second argument)
- *   4. exit 0 — and stdout is pure C (quiet, diff-friendly).
+ *   3a. default:   codegen_emit(): unit-stripped C to stdout/out.c
+ *   3b. -r/--run:  eval_run(): interpret the AST, print Result lines
+ *   4. exit 0 — stdout is either pure C (quiet, diff-friendly) or pure
+ *      Result lines (every diagnostic stays on stderr).
  *
  * NOTE: unlike dimc-checker there are NO debug dumps and no "front end ok:"
  * line on stdout — the test-runner contract lines belong to dimc-checker.
@@ -20,6 +25,7 @@
 #include "symtab.h"
 #include "semantic.h"
 #include "codegen.h"
+#include "evaluator.h"
 #include "common.h"
 
 extern FILE     *yyin;         /* set by driver; read by yylex */
@@ -35,15 +41,25 @@ int main(int argc, char **argv) {
     int     cg;
     int     idx = 1;          /* first positional argument */
     int     print_last = 0;
+    int     run_mode = 0;     /* Week-5: -r / --run selects the interpreter */
 
-    /* -p (print the answer) is additive and optional; all original
-     * 2-argument / 3-argument forms behave exactly as before. */
-    if (argc > 1 && strcmp(argv[1], "-p") == 0) {
-        print_last = 1;
-        idx = 2;
+    /* Flags are additive and optional; all original 2-/3-argument forms
+     * behave exactly as before. */
+    while (idx < argc && argv[idx][0] == '-' && argv[idx][1] != '\0') {
+        if (strcmp(argv[idx], "-p") == 0) {
+            print_last = 1;
+        } else if (strcmp(argv[idx], "-r") == 0 ||
+                   strcmp(argv[idx], "--run") == 0) {
+            run_mode = 1;
+        } else {
+            fprintf(stderr, "usage: %s [-p] [-r] program.dim [out.c]\n"
+                            "Unknown flag '%s'\n", argv[0], argv[idx]);
+            return EXIT_USAGE;
+        }
+        idx++;
     }
     if (argc != idx + 1 && argc != idx + 2) {
-        fprintf(stderr, "usage: %s [-p] program.dim [out.c]\n", argv[0]);
+        fprintf(stderr, "usage: %s [-p] [-r] program.dim [out.c]\n", argv[0]);
         return EXIT_USAGE;
     }
 
@@ -67,10 +83,10 @@ int main(int argc, char **argv) {
     /* ── 2. analyze (fresh table: analyzer declares on `let` itself) ── */
     st = symtab_create();
     sem_errors = semantic_check(st, g_program);
-    symtab_destroy(st);      /* codegen reads AST units, not the table */
     if (sem_errors > 0) {
-        DIM_ERR("pipeline stopped: %d semantic error(s), not emitting C",
-                sem_errors);
+        DIM_ERR("pipeline stopped: %d semantic error(s), not %s",
+                sem_errors, run_mode ? "evaluating" : "emitting C");
+        symtab_destroy(st);
         ast_free(g_program);
         g_program = NULL;
         fclose(fp);
@@ -78,7 +94,21 @@ int main(int argc, char **argv) {
         return EXIT_COMPILE_ERROR;
     }
 
-    /* ── 3. emit ── */
+    /* ── 3a. interpreter mode: run the math, print Results ── */
+    if (run_mode) {
+        int eval_errors = eval_run(g_program, st, stdout);
+        symtab_destroy(st);
+        ast_free(g_program);
+        g_program = NULL;
+        fclose(fp);
+        lexer_release_scanner();
+        if (eval_errors > 0)
+            DIM_ERR("evaluation stopped with %d error(s)", eval_errors);
+        return eval_errors > 0 ? EXIT_COMPILE_ERROR : EXIT_COMPILE_OK;
+    }
+    symtab_destroy(st);      /* codegen reads AST units, not the table */
+
+    /* ── 3b. emit (default behavior, unchanged) ── */
     cg = codegen_emit_print(g_program, argc == idx + 2 ? argv[idx + 1] : NULL,
                             print_last);
 

@@ -27,3 +27,13 @@ parser.tab.h
 # MS Office lock files
 ~$*
 ~$*.pptx
+
+# Python virtual environments
+.venv/
+venv/
+env/
+
+# Python cache files
+__pycache__/
+*.pyc
+*.pyo

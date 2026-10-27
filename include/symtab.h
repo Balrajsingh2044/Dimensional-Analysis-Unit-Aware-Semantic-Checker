@@ -35,6 +35,8 @@ typedef struct Symbol {
     double    scale;           /* canonical SI factor, default 1.0 (Week-3
                                * metric-vs-imperial: stored alongside unit) */
     int       line;            /* declaration line, for diagnostics */
+    double    value;           /* Week-5 eval pass: computed numeric value
+                                * in canonical SI (0.0 until interpreted) */
     struct Symbol *next;       /* collision chain (separate chaining) */
 } Symbol;
 
@@ -70,6 +72,12 @@ int     symtab_update_unit(SymTab *st, const char *name, UnitVec unit);
 /* Same, but also re-points the canonical scale (analyzer's assign path). */
 int     symtab_update_unit_s(SymTab *st, const char *name, UnitVec unit,
                              double scale);
+
+/* Week-5 eval pass: store the computed canonical SI value of a declared
+ * variable (the evaluator calls this on `let` / assignment). Returns 0 on
+ * success, -1 if the name is unknown (should not happen: the analyzer
+ * declares on every `let` before evaluation runs). */
+int     symtab_update_value(SymTab *st, const char *name, double value);
 
 /* ---- introspection (spreadsheet in the README lives on these) ---- */
 void    symtab_print(SymTab *st, FILE *out);   /* debug dump */

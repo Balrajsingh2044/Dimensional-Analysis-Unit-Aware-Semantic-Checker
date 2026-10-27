@@ -29,6 +29,11 @@ make clean && make
                                      # PRINTS the most recently assigned
                                      # variable (the "compiler hands you
                                      # the answer" flag)
+./output/dimc -r demo/mars_valid.dim # Week-5 INTERPRETER MODE: evaluate the
+./output/dimc --run demo/eval_energy.dim  # program at compile time and print
+                                          #   Result: 4500.00 [1,1,-1,0,0,0,0] (m*kg/s)
+                                          # one Result line per bare expression
+                                          # statement + the final let/assign
 ```
 
 Other useful targets: `make test` (unitvec/symtab/semantic suites), and
@@ -110,6 +115,8 @@ stderr, so `./output/dimc x.dim | gcc -std=c11 -x c -` just works.
 | semantic error | `front end ok:` printed, **no** `semantic ok:`; `dimc` emits **nothing** | exact diagnostics (`ERROR:` / `note:`) | 1 |
 | parse error | no contract lines / nothing | `ERROR: ... parse error` | 3 |
 | bad usage / I-O | — | usage / cannot-open | 2 |
+| valid program, `-r`/`--run` | `Result: <value> <[vector]> (<symbol>)` lines, nothing else | `declared:`/warnings | 0 |
+| evaluation error (`-r`), e.g. division by zero | nothing | `ERROR: line N: division by zero` + note | 1 |
 
 The runner (`tests/run_tests.sh`) greps the contract lines with `grep -F`
 and never parses the AST dump.

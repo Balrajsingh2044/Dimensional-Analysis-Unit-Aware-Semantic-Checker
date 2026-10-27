@@ -1,0 +1,6 @@
+// Week-5 interpreter demo: mixed metric/imperial INPUT, canonical SI OUTPUT.
+let mass   = 70 * kg;                                   // 70 S
+let height = 12 * feet;                                 // 3.6576 S
+let g      = 9.81 * meters / (seconds ^ 2);             // 9.81 S/S^2
+let energy = mass * g * height;                         // kg*m^2/s^2 (Joules)
+energy;

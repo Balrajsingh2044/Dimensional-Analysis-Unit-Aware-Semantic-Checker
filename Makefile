@@ -36,10 +36,16 @@ vec_test: $(BIN)/vec_test
 
 SEM_HDRS = include/semantic.h $(ST_HDRS)
 
+# Week-5 interpreter pass (evaluator.c / evaluator.h)
+EVAL_HDRS = include/evaluator.h $(SEM_HDRS)
+
 $(BIN)/semantic.o: src/semantic.c $(SEM_HDRS) | $(BIN)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 $(BIN)/semantic_ops.o: src/semantic_ops.c $(SEM_HDRS) | $(BIN)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(BIN)/evaluator.o: src/evaluator.c $(EVAL_HDRS) | $(BIN)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 $(BIN)/semantic_test: src/semantic_test.c $(BIN)/semantic.o \
@@ -88,7 +94,7 @@ $(BIN)/dimc-checker: $(BIN)/lexer.yy.o $(BIN)/parser.tab.o $(BIN)/ast.o \
 # final unified pipeline (Shreyansh's main.c + codegen.c + everything).
 # Building this before src/main.c exists fails with the missing-file error —
 # which is the cue to run `make checker` (front end + analyzer only) instead.
-$(BIN)/main.o: src/main.c $(SEM_HDRS) | $(BIN)
+$(BIN)/main.o: src/main.c $(EVAL_HDRS) | $(BIN)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 CG_HDRS = include/codegen.h $(SEM_HDRS)
@@ -98,7 +104,7 @@ $(BIN)/codegen.o: src/codegen.c $(CG_HDRS) | $(BIN)
 $(BIN)/dimc: $(BIN)/lexer.yy.o $(BIN)/parser.tab.o $(BIN)/ast.o \
             $(BIN)/symtab.o $(BIN)/unitvec.o $(BIN)/semantic.o \
             $(BIN)/semantic_ops.o $(BIN)/frontend_main.o \
-            $(BIN)/codegen.o $(BIN)/main.o
+            $(BIN)/codegen.o $(BIN)/evaluator.o $(BIN)/main.o
 	$(CC) $(CFLAGS) -o $@ $^ $(LDLIBS)
 
 # Phase-3 checker (parse + AST + analyzer), no codegen yet. old alias kept:
@@ -173,7 +179,8 @@ $(BIN)/audit/dimc: $(BIN)/audit/lexer.yy.o $(BIN)/audit/parser.tab.o \
                    $(BIN)/audit/ast.o $(BIN)/audit/symtab.o $(BIN)/audit/unitvec.o \
                    $(BIN)/audit/semantic.o $(BIN)/audit/semantic_ops.o \
                    $(BIN)/audit/frontend_main.o $(BIN)/audit/codegen.o \
-                   $(BIN)/audit/main.o $(BIN)/audit/alloc_audit.o
+                   $(BIN)/audit/evaluator.o $(BIN)/audit/main.o \
+                   $(BIN)/audit/alloc_audit.o
 	$(CC) $(AUDIT_FLAGS) -o $@ $^ $(LDLIBS)
 
 # The five report contexts from docs/valgrind_baseline_HOWTO.md + extras:
@@ -187,6 +194,7 @@ audit: audit-body
 	./$(BIN)/audit/dimc-checker tests/invalid/05_missing_semicolon.dim
 	./$(BIN)/audit/dimc.exe demo/mars_valid.dim
 	./$(BIN)/audit/dimc.exe tests/invalid/04_metric_imperial.dim
+	./$(BIN)/audit/dimc.exe -r demo/mars_valid.dim
 
 clean:
 	rm -rf $(BIN)

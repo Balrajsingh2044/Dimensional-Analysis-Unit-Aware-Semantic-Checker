@@ -127,6 +127,14 @@ int symtab_update_unit_s(SymTab *st, const char *name, UnitVec unit,
     return 0;
 }
 
+/* Week-5 eval pass: persist the computed canonical SI value. */
+int symtab_update_value(SymTab *st, const char *name, double value) {
+    Symbol *s = symtab_lookup(st, name);
+    if (!s) return -1;
+    s->value = value;
+    return 0;
+}
+
 /* ------------------------------------------------ introspection */
 
 const char *prim_type_str(PrimType t) {
