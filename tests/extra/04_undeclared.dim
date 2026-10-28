@@ -1,0 +1,2 @@
+# extra case 4: use of an undeclared name
+let x = y;

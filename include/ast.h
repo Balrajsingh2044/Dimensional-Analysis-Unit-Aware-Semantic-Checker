@@ -1,6 +1,6 @@
 /* ast.h — AST node contract (Balraj owns the parser that builds these;
  * Ayansh's analyzer and Shreyansh's codegen walk the same nodes).
- * ⭐ THIS FILE IS THE TEAM CONTRACT: DO NOT EDIT WITHOUT DISCUSSION.
+ * IMPORTANT: THIS FILE IS THE TEAM CONTRACT: DO NOT EDIT WITHOUT DISCUSSION.
  *
  * Design: every expression node carries an (optional) slot for the folded
  * UnitVec. The analyzer fills it bottom-up; -1 exponents flag "not yet known".

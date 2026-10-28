@@ -1,5 +1,5 @@
 /* unitvec.h — 7-dimensional unit vector engine (Ayansh owns this).
- * ⭐ THIS FILE IS THE TEAM CONTRACT: DO NOT EDIT WITHOUT DISCUSSION.
+ * IMPORTANT: THIS FILE IS THE TEAM CONTRACT: DO NOT EDIT WITHOUT DISCUSSION.
  *
  * A unit vector is a list of exponents over the SI base dimensions, in the order:
  *   [ m, kg, s, A, K, mol, cd ]

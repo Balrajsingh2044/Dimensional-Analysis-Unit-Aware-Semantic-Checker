@@ -1,5 +1,5 @@
 /* symtab.h — hash-table symbol table (Balraj owns; read/written by Ayansh).
- * ⭐ THIS FILE IS THE TEAM CONTRACT: DO NOT EDIT WITHOUT DISCUSSION.
+ * IMPORTANT: THIS FILE IS THE TEAM CONTRACT: DO NOT EDIT WITHOUT DISCUSSION.
  *
  * Stores one entry per declared identifier:
  *   - name            e.g. "distance"

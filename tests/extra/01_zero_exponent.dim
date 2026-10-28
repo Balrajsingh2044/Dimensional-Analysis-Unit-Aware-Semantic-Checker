@@ -1,0 +1,2 @@
+# extra case 1: exponent zero collapses a unit to a scalar
+let area = 4 * meters ^ 0;

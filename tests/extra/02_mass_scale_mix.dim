@@ -1,0 +1,4 @@
+# extra case 2: same mass dimension, different scale
+let a = 5 * kg;
+let b = 3 * pounds;
+let c = a + b;

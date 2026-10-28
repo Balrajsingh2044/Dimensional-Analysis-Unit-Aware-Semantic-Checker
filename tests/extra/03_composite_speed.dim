@@ -1,0 +1,4 @@
+# extra case 3: composite unit scale propagates through division
+let d = 10 * km;
+let t = 2 * hours;
+let v = d / t;

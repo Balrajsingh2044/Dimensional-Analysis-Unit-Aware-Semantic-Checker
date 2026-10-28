@@ -1,5 +1,5 @@
 /* semantic.h — semantic analyzer entry point (Ayansh owns this).
- * ⭐ NEW team-contract file: adding it doesn't change anyone else's API —
+ * IMPORTANT: NEW team-contract file: adding it doesn't change anyone else's API —
  *    other members only need to care about ONE function, semantic_check().
  *
  * Reads the AST the parser produced, folds UnitVecs bottom-up through every

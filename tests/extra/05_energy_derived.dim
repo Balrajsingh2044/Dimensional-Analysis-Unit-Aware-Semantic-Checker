@@ -1,0 +1,4 @@
+# extra case 5: newton-metre is energy
+let f = 10 * newtons;
+let d = 3 * meters;
+let w = f * d;
