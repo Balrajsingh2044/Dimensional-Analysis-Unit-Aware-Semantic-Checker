@@ -127,7 +127,7 @@ and never parses the AST dump.
 
 ## QA & memory audit
 
-- Contract tests: **vec_test 33**, **symtab_test 16**, **semantic_test 22**
+- Contract tests: **vec_test 36**, **symtab_test 16**, **semantic_test 22**
   checks — all green; suite **16/16**.
 - Leak baseline answered portable-style (`src/alloc_audit.h` ledger,
   `make audit`): all engine/pipeline contexts are **0 blocks in-use at

@@ -29,14 +29,14 @@ bison -d -o parser.tab.c src\parser.y 2>nul
 if errorlevel 1 goto :fail_setup
 cmd /c "flex -t src\lexer.l > lexer.yy.c"
 if errorlevel 1 goto :fail_setup
-for %%F in (src\unitvec.c src\symtab.c src\ast.c src\semantic.c src\semantic_ops.c src\codegen.c src\main.c) do (
+for %%F in (src\unitvec.c src\symtab.c src\ast.c src\semantic.c src\semantic_ops.c src\evaluator.c src\codegen.c src\main.c) do (
     gcc -Wall -Wextra -g -O0 -std=c11 -Iinclude -c "%%F" -o "%%~nF.o" || goto :fail_setup
 )
 gcc -Wall -Wextra -g -O0 -std=c11 -DBUILD_CHECKER -Iinclude -c src\frontend_main.c -o frontend_main.o || goto :fail_setup
 gcc -Wall -Wextra -g -O0 -std=c11 -Iinclude -I. -c lexer.yy.c -o lexer.yy.o || goto :fail_setup
 gcc -Wall -Wextra -g -O0 -std=c11 -Iinclude -I. -c parser.tab.c -o parser.tab.o || goto :fail_setup
 gcc -Wall -Wextra -g -O0 -std=c11 -DBUILD_CHECKER -Iinclude -I. -o dimc-checker.exe lexer.yy.o parser.tab.o ast.o symtab.o unitvec.o semantic.o semantic_ops.o frontend_main.o -lm || goto :fail_setup
-gcc -Wall -Wextra -g -O0 -std=c11 -Iinclude -I. -o dimc.exe lexer.yy.o parser.tab.o ast.o symtab.o unitvec.o semantic.o semantic_ops.o codegen.o main.o -lm || goto :fail_setup
+gcc -Wall -Wextra -g -O0 -std=c11 -Iinclude -I. -o dimc.exe lexer.yy.o parser.tab.o ast.o symtab.o unitvec.o semantic.o semantic_ops.o evaluator.o codegen.o main.o -lm || goto :fail_setup
 echo       OK
 
 echo [2/6] unit batteries...
