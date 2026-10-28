@@ -14,3 +14,10 @@
   **Answer:** "We added a `double scale` field to the AST and Symbol Table. `meters` has scale 1.0, `feet` has 0.3048. If dimensions match but scales differ, we throw a compile-time error."
 - **Question:** "Why is there a memory leak on parse errors?"
   **Answer:** "Bison 2.4.1 has a known issue where it frees values consumed by actions. Adding destructors causes use-after-free crashes. We chose compiler stability over cleaning up 343 bytes on a fatal error path."
+
+## For Shashwat (Documentation, QA & Release)
+
+- **Report owner:** keep the project report, figures, screenshots and the unit vocabulary table in sync with the delivered revision; verify every number quoted in the report against a fresh build.
+- **Release gate:** run `deploy/run_demo.bat` (Windows) or `deploy/run_demo.sh` (Linux/WSL) and confirm the single `ALL STAGES PASS` line before every review or submission.
+- **Evidence pack:** collect the terminal captures listed in the report appendix (build, 16/16 runner, 36/16/22 batteries, Mars Climate Orbiter diagnostic, generated C + gcc run, evaluator output, Streamlit UI).
+- **Backup Q&A:** be ready to answer "what exactly is tested?" with the layered suite: 36 engine checks, 16 symbol-table checks, 22 analyzer checks and 16 end-to-end cases, with no skipped cases.

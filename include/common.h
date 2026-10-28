@@ -1,7 +1,7 @@
 /* common.h — shared definitions, error reporting, and constants.
  * ⭐ THIS FILE IS THE TEAM CONTRACT: DO NOT EDIT WITHOUT DISCUSSION.
  *
- * Role split:  Balraj = lexer/parser/symtab  |  Ayansh = semantic analyzer  |  Shreyansh = codegen/demo
+ * Role split:  Balraj = lexer/parser/symtab  |  Ayansh = semantic analyzer  |  Shreyansh = codegen/demo  |  Shashwat = docs/release QA
  */
 #ifndef COMMON_H
 #define COMMON_H

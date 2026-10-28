@@ -491,4 +491,4 @@ with right_col:
 
 # ---- Footer ----------------------------------------------------------------
 st.divider()
-st.caption("Built with C, Flex, Bison, and Streamlit. Team: Balraj, Ayansh, Shreyansh.")
+st.caption("Built with C, Flex, Bison, and Streamlit. Team: Balraj, Ayansh, Shreyansh, Shashwat.")

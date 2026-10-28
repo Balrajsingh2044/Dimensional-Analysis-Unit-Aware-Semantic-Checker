@@ -11,7 +11,7 @@ title = slide.shapes.title
 subtitle = slide.placeholders[1]
 
 title.text = "Dimensional Analysis Semantic Checker"
-subtitle.text = "Preventing the next Mars Climate Orbiter disaster\n\nTeam: Balraj, Ayansh, Shreyansh"
+subtitle.text = "Preventing the next Mars Climate Orbiter disaster\n\nTeam: Balraj, Ayansh, Shreyansh, Shashwat"
 
 # --- SLIDE 2: Current Architecture ---
 slide_layout = prs.slide_layouts[1] # Title and Content layout

@@ -18,6 +18,7 @@ dimension, different canonical size) is a hard compile-time error.
 | **Balraj Singh** | Frontend (Flex lexer / Bison parser), Symbol Table, QA & Integration |
 | **Ayansh** | Semantic Analyzer, 7-D Unit Vector Engine |
 | **Shreyansh** | Codegen, Testing Suite, Presentation |
+| **Shashwat Jha** | Documentation, QA & Release Verification |
 
 ## Build & Run
 
